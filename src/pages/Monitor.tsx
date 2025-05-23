@@ -2,15 +2,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home } from 'lucide-react';
+import { Home, CheckCircle } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { toast } from '@/components/ui/sonner';
 
 export interface OrderEntry {
   auftragsnummer: string;
   prioritaet: 1 | 2;
   zeitstempel: Date;
   zusatzDaten?: Record<string, any>;
+}
+
+export interface CompletedOrderEntry extends OrderEntry {
+  abschlussZeitstempel: Date;
+  aufenthaltsZeitInQS: string;
 }
 
 interface ColumnSetting {
@@ -24,6 +31,7 @@ const Monitor = () => {
   const [prio1Orders, setPrio1Orders] = useState<OrderEntry[]>([]);
   const [prio2Orders, setPrio2Orders] = useState<OrderEntry[]>([]);
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>([]);
+  const [barcodeValue, setBarcodeValue] = useState<string>('');
   const [, forceUpdate] = useState({});
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -119,6 +127,77 @@ const Monitor = () => {
     }
   };
 
+  // Function to handle barcode scan completion
+  const handleBarcodeScan = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const auftragsnummer = barcodeValue.trim();
+      
+      if (!auftragsnummer) {
+        toast("Bitte geben Sie eine Betriebsauftragsnummer ein");
+        return;
+      }
+      
+      // Search for the order in Prio 1 and Prio 2 lists
+      const allOrders = [...prio1Orders, ...prio2Orders];
+      const orderToComplete = allOrders.find(order => order.auftragsnummer === auftragsnummer);
+      
+      if (orderToComplete) {
+        completeOrder(orderToComplete);
+        setBarcodeValue('');
+        toast(`Auftrag ${auftragsnummer} wurde als abgeschlossen markiert`, {
+          duration: 3000,
+        });
+      } else {
+        toast(`Auftrag ${auftragsnummer} nicht gefunden`, {
+          duration: 3000,
+        });
+        setBarcodeValue('');
+      }
+    }
+  };
+
+  // Function to mark an order as completed
+  const completeOrder = (order: OrderEntry) => {
+    const now = new Date();
+    const completedOrder: CompletedOrderEntry = {
+      ...order,
+      abschlussZeitstempel: now,
+      aufenthaltsZeitInQS: calculateTimeInQS(order.zeitstempel)
+    };
+    
+    // Save to archive
+    saveToArchive(completedOrder);
+    
+    // Remove from active orders
+    removeFromActiveOrders(order.auftragsnummer);
+  };
+
+  // Save completed order to archive
+  const saveToArchive = (completedOrder: CompletedOrderEntry) => {
+    const existingArchive = localStorage.getItem('completedOrders');
+    let archive: CompletedOrderEntry[] = existingArchive 
+      ? JSON.parse(existingArchive)
+      : [];
+    
+    archive.push(completedOrder);
+    localStorage.setItem('completedOrders', JSON.stringify(archive));
+  };
+
+  // Remove order from active orders
+  const removeFromActiveOrders = (auftragsnummer: string) => {
+    // Update state
+    setPrio1Orders(prev => prev.filter(order => order.auftragsnummer !== auftragsnummer));
+    setPrio2Orders(prev => prev.filter(order => order.auftragsnummer !== auftragsnummer));
+    
+    // Update localStorage
+    const existingOrders = localStorage.getItem('orders');
+    if (existingOrders) {
+      const orders: OrderEntry[] = JSON.parse(existingOrders);
+      const updatedOrders = orders.filter(order => order.auftragsnummer !== auftragsnummer);
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <Button 
@@ -142,6 +221,36 @@ const Monitor = () => {
             </div>
           )}
         </h1>
+        
+        {/* Barcode Scanner */}
+        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="bg-blue-600 text-white">
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Auftrag abschließen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <label htmlFor="barcode" className="text-sm font-medium">
+                Barcode scannen oder Betriebsauftragsnummer eingeben:
+              </label>
+              <Input
+                id="barcode"
+                type="text"
+                placeholder="Betriebsauftragsnummer scannen..."
+                value={barcodeValue}
+                onChange={(e) => setBarcodeValue(e.target.value)}
+                onKeyDown={handleBarcodeScan}
+                className="font-mono text-lg"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Scannen Sie den Barcode oder geben Sie die Nummer ein und drücken Sie Enter, um den Auftrag abzuschließen.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
         
         {/* Prio 1 Orders */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
