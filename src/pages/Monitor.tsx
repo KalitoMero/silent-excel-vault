@@ -282,35 +282,6 @@ const Monitor = () => {
           )}
         </h1>
         
-        {/* Barcode Scanner - Now just as a visible fallback */}
-        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="bg-blue-600 text-white">
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
-              Auftrag abschließen
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              <label htmlFor="barcode" className="text-sm font-medium">
-                Betriebsauftragsnummer manuell eingeben (oder einfach Barcode scannen):
-              </label>
-              <Input
-                id="barcode"
-                type="text"
-                placeholder="Betriebsauftragsnummer..."
-                value={barcodeValue}
-                onChange={(e) => setBarcodeValue(e.target.value)}
-                onKeyDown={handleBarcodeScan}
-                className="font-mono text-lg"
-              />
-              <p className="text-xs text-muted-foreground">
-                Sie können jederzeit einen Barcode scannen, ohne dieses Feld vorher zu fokussieren.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        
         {/* Prio 1 Orders */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="bg-amber-500 text-white">
@@ -390,6 +361,35 @@ const Monitor = () => {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+        
+        {/* Barcode Scanner - Moved below Prio 2 section */}
+        <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="bg-blue-600 text-white">
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Auftrag abschließen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <label htmlFor="barcode" className="text-sm font-medium">
+                Betriebsauftragsnummer manuell eingeben (oder einfach Barcode scannen):
+              </label>
+              <Input
+                id="barcode"
+                type="text"
+                placeholder="Betriebsauftragsnummer..."
+                value={barcodeValue}
+                onChange={(e) => setBarcodeValue(e.target.value)}
+                onKeyDown={handleBarcodeScan}
+                className="font-mono text-lg"
+              />
+              <p className="text-xs text-muted-foreground">
+                Sie können jederzeit einen Barcode scannen, ohne dieses Feld vorher zu fokussieren.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
