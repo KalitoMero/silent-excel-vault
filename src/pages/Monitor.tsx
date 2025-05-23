@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,10 @@ const Monitor = () => {
         // Split orders by priority
         const prio1 = parsedOrders.filter(order => order.prioritaet === 1);
         const prio2 = parsedOrders.filter(order => order.prioritaet === 2);
+        
+        // Sort orders by timestamp (oldest first)
+        prio1.sort((a, b) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
+        prio2.sort((a, b) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
         
         setPrio1Orders(prio1);
         setPrio2Orders(prio2);
