@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -12,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Save, Home, Download, FileExcel } from 'lucide-react';
+import { Plus, Save, Home, Download, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as XLSX from 'xlsx';
@@ -410,7 +409,7 @@ const Einstellungen = () => {
                   className="bg-green-600 hover:bg-green-700"
                   disabled={completedOrders.length === 0}
                 >
-                  <FileExcel className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-4 w-4" />
                   Als Excel exportieren
                 </Button>
               </CardHeader>
