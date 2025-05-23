@@ -7,7 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Datenimport from "./pages/Datenimport";
 import Einstellungen from "./pages/Einstellungen";
-import Scanauftrag from "./pages/Scanauftrag";
+import Home1 from "./pages/Home1";
+import Home2 from "./pages/Home2";
 import PrioAuswaehlen from "./pages/PrioAuswaehlen";
 import Monitor from "./pages/Monitor";
 import NotFound from "./pages/NotFound";
@@ -24,7 +25,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/datenimport" element={<Datenimport />} />
           <Route path="/einstellungen" element={<Einstellungen />} />
-          <Route path="/scanauftrag" element={<Scanauftrag />} />
+          <Route path="/home1" element={<Home1 />} />
+          <Route path="/home2" element={<Home2 />} />
+          <Route path="/scanauftrag" element={<Home1 />} />
           <Route path="/prio-auswaehlen" element={<PrioAuswaehlen />} />
           <Route path="/monitor" element={<Monitor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

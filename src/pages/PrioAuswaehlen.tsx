@@ -1,4 +1,3 @@
-
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,9 +44,9 @@ const PrioAuswaehlen = () => {
       duration: 2000,
     });
     
-    // Navigate to scanauftrag page after 2 seconds
+    // Navigate to home1 page after 2 seconds
     setTimeout(() => {
-      navigate('/scanauftrag');
+      navigate('/home1');
     }, 2000);
   };
 
@@ -71,7 +70,7 @@ const PrioAuswaehlen = () => {
           asChild 
           className="mb-6"
         >
-          <Link to="/scanauftrag" className="flex items-center">
+          <Link to="/home1" className="flex items-center">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zurück
           </Link>
