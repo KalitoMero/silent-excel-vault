@@ -1,8 +1,7 @@
-
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, BarChart3, Database, Settings } from 'lucide-react';
+import { Upload, BarChart3, Database, Settings, QrCode } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -18,7 +17,7 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-3 text-xl">
@@ -52,6 +51,25 @@ const Index = () => {
               <Button asChild className="w-full bg-orange-600 hover:bg-orange-700">
                 <Link to="/einstellungen">
                   Einstellungen öffnen
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <QrCode className="h-6 w-6 text-purple-600" />
+                Scanauftrag
+              </CardTitle>
+              <CardDescription>
+                Barcode scannen und Prioritäten für Betriebsaufträge auswählen.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="w-full bg-purple-600 hover:bg-purple-700">
+                <Link to="/scanauftrag">
+                  Zum Scanner
                 </Link>
               </Button>
             </CardContent>
