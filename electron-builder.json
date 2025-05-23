@@ -11,13 +11,14 @@
     "output": "electron-dist"
   },
   "mac": {
-    "category": "public.app-category.productivity"
+    "category": "public.app-category.productivity",
+    "target": ["zip"]
   },
   "win": {
-    "target": "nsis"
+    "target": ["portable"]
   },
   "linux": {
-    "target": ["AppImage", "deb"],
+    "target": ["AppImage"],
     "category": "Office"
   },
   "npmRebuild": false

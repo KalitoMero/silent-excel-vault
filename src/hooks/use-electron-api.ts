@@ -9,6 +9,7 @@ interface ElectronAPI {
     arch: string;
     version: string;
     electronVersion: string;
+    error?: string;
   }>;
 }
 
@@ -23,7 +24,17 @@ export function useElectronApi() {
   const [isElectron, setIsElectron] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsElectron(!!window.electron);
+    // Check if we're running in Electron environment
+    const checkElectron = () => {
+      try {
+        setIsElectron(!!window.electron);
+      } catch (error) {
+        console.error('Error checking Electron environment:', error);
+        setIsElectron(false);
+      }
+    };
+    
+    checkElectron();
   }, []);
 
   const getAppVersion = useCallback(async () => {
@@ -49,7 +60,8 @@ export function useElectronApi() {
       platform: 'browser',
       arch: 'unknown',
       version: 'unknown',
-      electronVersion: 'N/A'
+      electronVersion: 'N/A',
+      error: 'Not running in Electron environment'
     };
   }, []);
 
