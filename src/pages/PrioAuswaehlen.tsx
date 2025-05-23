@@ -1,17 +1,55 @@
 
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
+import { OrderEntry } from './Monitor';
+import { toast } from '@/hooks/use-toast';
 
 const PrioAuswaehlen = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
 
   const handlePrioSelect = (prio: number) => {
-    // Here you could add logic to handle the priority selection
+    if (!auftragsnummer) {
+      toast({
+        title: "Fehler",
+        description: "Keine Auftragsnummer gefunden",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create new order entry
+    const newOrder: OrderEntry = {
+      auftragsnummer,
+      prioritaet: prio as 1 | 2,
+      zeitstempel: new Date(),
+    };
+
+    // Get existing orders from localStorage
+    const existingOrdersJson = localStorage.getItem('orders');
+    let orders: OrderEntry[] = existingOrdersJson 
+      ? JSON.parse(existingOrdersJson) 
+      : [];
+    
+    // Add the new order
+    orders.push(newOrder);
+    
+    // Save to localStorage
+    localStorage.setItem('orders', JSON.stringify(orders));
+    
     console.log(`Auftragsnummer ${auftragsnummer} mit Priorität ${prio} ausgewählt`);
-    // For now, we'll just log the selection
+    
+    // Show success toast
+    toast({
+      title: "Auftrag gespeichert",
+      description: `Auftragsnummer ${auftragsnummer} mit Priorität ${prio} wurde gespeichert.`,
+    });
+    
+    // Navigate to monitor page
+    navigate('/monitor');
   };
 
   return (

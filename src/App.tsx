@@ -9,6 +9,7 @@ import Datenimport from "./pages/Datenimport";
 import Einstellungen from "./pages/Einstellungen";
 import Scanauftrag from "./pages/Scanauftrag";
 import PrioAuswaehlen from "./pages/PrioAuswaehlen";
+import Monitor from "./pages/Monitor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/einstellungen" element={<Einstellungen />} />
           <Route path="/scanauftrag" element={<Scanauftrag />} />
           <Route path="/prio-auswaehlen" element={<PrioAuswaehlen />} />
+          <Route path="/monitor" element={<Monitor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
