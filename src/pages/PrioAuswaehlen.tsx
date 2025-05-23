@@ -24,7 +24,42 @@ const PrioAuswaehlen = () => {
       auftragsnummer,
       prioritaet: prio as 1 | 2,
       zeitstempel: new Date(),
+      zusatzDaten: {}
     };
+
+    // Try to find the order in the Excel data
+    const excelData = localStorage.getItem('excelData');
+    if (excelData) {
+      try {
+        const data = JSON.parse(excelData);
+        const excelSettings = JSON.parse(localStorage.getItem('excelSettings') || '{"auftragsnummerColumn": 1}');
+        const columnSettings = JSON.parse(localStorage.getItem('columnSettings') || '[]');
+        
+        // Find the row with the matching Betriebsauftragsnummer
+        const auftragsnummerColIndex = excelSettings.auftragsnummerColumn - 1; // Convert to 0-based index
+        
+        const foundRow = data.find((row: any[]) => 
+          row[auftragsnummerColIndex] && 
+          row[auftragsnummerColIndex].toString() === auftragsnummer
+        );
+        
+        if (foundRow) {
+          // We found the row, now extract the additional column data
+          columnSettings.forEach((setting: any) => {
+            const colIndex = setting.columnNumber - 1; // Convert to 0-based index
+            if (colIndex >= 0 && colIndex < foundRow.length) {
+              newOrder.zusatzDaten[setting.title] = foundRow[colIndex];
+            }
+          });
+          
+          console.log(`Auftrag ${auftragsnummer} wurde in Excel-Daten gefunden.`);
+        } else {
+          console.log(`Auftrag ${auftragsnummer} wurde nicht in Excel-Daten gefunden.`);
+        }
+      } catch (error) {
+        console.error("Fehler beim Parsen der Excel-Daten:", error);
+      }
+    }
 
     // Get existing orders from localStorage
     const existingOrdersJson = localStorage.getItem('orders');

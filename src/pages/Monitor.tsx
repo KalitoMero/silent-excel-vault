@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,11 +10,20 @@ export interface OrderEntry {
   auftragsnummer: string;
   prioritaet: 1 | 2;
   zeitstempel: Date;
+  zusatzDaten?: Record<string, any>;
+}
+
+interface ColumnSetting {
+  id: string;
+  columnNumber: number;
+  title: string;
+  displayPosition: number;
 }
 
 const Monitor = () => {
   const [prio1Orders, setPrio1Orders] = useState<OrderEntry[]>([]);
   const [prio2Orders, setPrio2Orders] = useState<OrderEntry[]>([]);
+  const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>([]);
   const [, forceUpdate] = useState({});
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -31,6 +41,21 @@ const Monitor = () => {
   }, [autoReturn, navigate]);
 
   useEffect(() => {
+    // Load column settings
+    const savedColumnSettings = localStorage.getItem('columnSettings');
+    if (savedColumnSettings) {
+      try {
+        const parsedSettings = JSON.parse(savedColumnSettings);
+        // Sort by display position
+        parsedSettings.sort((a: ColumnSetting, b: ColumnSetting) => 
+          a.displayPosition - b.displayPosition
+        );
+        setColumnSettings(parsedSettings);
+      } catch (error) {
+        console.error("Failed to parse column settings:", error);
+      }
+    }
+
     // Load orders from localStorage on component mount
     const loadOrders = () => {
       const savedOrders = localStorage.getItem('orders');
@@ -133,6 +158,9 @@ const Monitor = () => {
                     <TableHead>Auftragsnummer</TableHead>
                     <TableHead>Zeitstempel</TableHead>
                     <TableHead>Aufenthalt in QS</TableHead>
+                    {columnSettings.map((column) => (
+                      <TableHead key={column.id}>{column.title}</TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -143,6 +171,11 @@ const Monitor = () => {
                       <TableCell className="font-medium text-amber-600">
                         {calculateTimeInQS(order.zeitstempel)}
                       </TableCell>
+                      {columnSettings.map((column) => (
+                        <TableCell key={`${order.auftragsnummer}-${column.id}`}>
+                          {order.zusatzDaten && order.zusatzDaten[column.title]}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -166,6 +199,9 @@ const Monitor = () => {
                     <TableHead>Auftragsnummer</TableHead>
                     <TableHead>Zeitstempel</TableHead>
                     <TableHead>Aufenthalt in QS</TableHead>
+                    {columnSettings.map((column) => (
+                      <TableHead key={column.id}>{column.title}</TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -176,6 +212,11 @@ const Monitor = () => {
                       <TableCell className="font-medium text-gray-600">
                         {calculateTimeInQS(order.zeitstempel)}
                       </TableCell>
+                      {columnSettings.map((column) => (
+                        <TableCell key={`${order.auftragsnummer}-${column.id}`}>
+                          {order.zusatzDaten && order.zusatzDaten[column.title]}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))}
                 </TableBody>
