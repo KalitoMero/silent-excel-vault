@@ -15,24 +15,37 @@ export interface OrderEntry {
 const Monitor = () => {
   const [prio1Orders, setPrio1Orders] = useState<OrderEntry[]>([]);
   const [prio2Orders, setPrio2Orders] = useState<OrderEntry[]>([]);
+  const [, forceUpdate] = useState({});
 
   useEffect(() => {
     // Load orders from localStorage on component mount
-    const savedOrders = localStorage.getItem('orders');
-    if (savedOrders) {
-      const parsedOrders: OrderEntry[] = JSON.parse(savedOrders, (key, value) => {
-        // Convert ISO string back to Date object for zeitstempel
-        if (key === 'zeitstempel') return new Date(value);
-        return value;
-      });
-      
-      // Split orders by priority
-      const prio1 = parsedOrders.filter(order => order.prioritaet === 1);
-      const prio2 = parsedOrders.filter(order => order.prioritaet === 2);
-      
-      setPrio1Orders(prio1);
-      setPrio2Orders(prio2);
-    }
+    const loadOrders = () => {
+      const savedOrders = localStorage.getItem('orders');
+      if (savedOrders) {
+        const parsedOrders: OrderEntry[] = JSON.parse(savedOrders, (key, value) => {
+          // Convert ISO string back to Date object for zeitstempel
+          if (key === 'zeitstempel') return new Date(value);
+          return value;
+        });
+        
+        // Split orders by priority
+        const prio1 = parsedOrders.filter(order => order.prioritaet === 1);
+        const prio2 = parsedOrders.filter(order => order.prioritaet === 2);
+        
+        setPrio1Orders(prio1);
+        setPrio2Orders(prio2);
+      }
+    };
+
+    loadOrders();
+    
+    // Set up an interval to update the timers every second
+    const intervalId = setInterval(() => {
+      forceUpdate({});
+    }, 1000);
+    
+    // Clean up interval when component unmounts
+    return () => clearInterval(intervalId);
   }, []);
 
   const formatDate = (date: Date) => {
@@ -44,6 +57,24 @@ const Monitor = () => {
       minute: '2-digit',
       second: '2-digit'
     }).format(date);
+  };
+  
+  const calculateTimeInQS = (zeitstempel: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - zeitstempel.getTime();
+    
+    // Convert to seconds, minutes, hours, and days
+    const seconds = Math.floor((diffMs / 1000) % 60);
+    const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+    const hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    // Format the string based on whether it's more or less than 24 hours
+    if (days > 0) {
+      return `${days} Tag${days > 1 ? 'e' : ''}, ${hours} Stunden, ${minutes} Minuten, ${seconds} Sekunden`;
+    } else {
+      return `${hours} Stunden, ${minutes} Minuten, ${seconds} Sekunden`;
+    }
   };
 
   return (
@@ -77,6 +108,7 @@ const Monitor = () => {
                   <TableRow>
                     <TableHead>Auftragsnummer</TableHead>
                     <TableHead>Zeitstempel</TableHead>
+                    <TableHead>Aufenthalt in QS</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -84,6 +116,9 @@ const Monitor = () => {
                     <TableRow key={`${order.auftragsnummer}-${index}`}>
                       <TableCell className="font-medium">{order.auftragsnummer}</TableCell>
                       <TableCell>{formatDate(order.zeitstempel)}</TableCell>
+                      <TableCell className="font-medium text-amber-600">
+                        {calculateTimeInQS(order.zeitstempel)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -106,6 +141,7 @@ const Monitor = () => {
                   <TableRow>
                     <TableHead>Auftragsnummer</TableHead>
                     <TableHead>Zeitstempel</TableHead>
+                    <TableHead>Aufenthalt in QS</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -113,6 +149,9 @@ const Monitor = () => {
                     <TableRow key={`${order.auftragsnummer}-${index}`}>
                       <TableCell className="font-medium">{order.auftragsnummer}</TableCell>
                       <TableCell>{formatDate(order.zeitstempel)}</TableCell>
+                      <TableCell className="font-medium text-gray-600">
+                        {calculateTimeInQS(order.zeitstempel)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
