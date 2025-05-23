@@ -2,7 +2,7 @@
 import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 
 const PrioAuswaehlen = () => {
   const [searchParams] = useSearchParams();
@@ -10,6 +10,18 @@ const PrioAuswaehlen = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="fixed top-6 left-6" 
+        asChild
+      >
+        <Link to="/">
+          <Home className="h-4 w-4" />
+          <span className="sr-only">Home</span>
+        </Link>
+      </Button>
+
       <div className="max-w-4xl mx-auto">
         <Button 
           variant="ghost" 

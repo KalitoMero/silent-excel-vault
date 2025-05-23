@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -89,6 +90,18 @@ const Datenimport = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="fixed top-6 left-6" 
+        asChild
+      >
+        <Link to="/">
+          <Home className="h-4 w-4" />
+          <span className="sr-only">Home</span>
+        </Link>
+      </Button>
+
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Datenimport</h1>

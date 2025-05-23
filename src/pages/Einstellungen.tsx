@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Table, 
   TableBody, 
@@ -11,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, Home } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 interface ColumnSetting {
@@ -85,6 +86,18 @@ const Einstellungen = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <Button 
+        variant="outline" 
+        size="icon" 
+        className="fixed top-6 left-6" 
+        asChild
+      >
+        <Link to="/">
+          <Home className="h-4 w-4" />
+          <span className="sr-only">Home</span>
+        </Link>
+      </Button>
+
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">Einstellungen</h1>
         
