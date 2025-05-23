@@ -8,6 +8,12 @@ const PrioAuswaehlen = () => {
   const [searchParams] = useSearchParams();
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
 
+  const handlePrioSelect = (prio: number) => {
+    // Here you could add logic to handle the priority selection
+    console.log(`Auftragsnummer ${auftragsnummer} mit Priorität ${prio} ausgewählt`);
+    // For now, we'll just log the selection
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <Button 
@@ -45,10 +51,23 @@ const PrioAuswaehlen = () => {
                 <p className="text-xl bg-gray-100 p-3 rounded-md">{auftragsnummer}</p>
               </div>
               
-              {/* Priority selection UI will be implemented here later */}
-              <p className="text-gray-600 italic">
-                Diese Seite wird zu einem späteren Zeitpunkt um die Prio-Auswahl erweitert.
-              </p>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button 
+                  onClick={() => handlePrioSelect(1)}
+                  size="lg" 
+                  className="bg-amber-500 hover:bg-amber-600 px-10 py-6 text-xl h-auto"
+                >
+                  Prio 1
+                </Button>
+                <Button 
+                  onClick={() => handlePrioSelect(2)}
+                  variant="outline"
+                  size="lg" 
+                  className="border-slate-400 hover:bg-slate-100 px-10 py-6 text-xl h-auto"
+                >
+                  Prio 2
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
