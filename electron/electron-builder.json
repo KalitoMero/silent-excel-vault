@@ -20,5 +20,6 @@
   "linux": {
     "target": ["AppImage", "deb"],
     "category": "Office"
-  }
+  },
+  "npmRebuild": false
 }

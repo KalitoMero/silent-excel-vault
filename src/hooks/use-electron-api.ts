@@ -23,19 +23,27 @@ export function useElectronApi() {
   const [isElectron, setIsElectron] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsElectron(window.electron !== undefined);
+    setIsElectron(!!window.electron);
   }, []);
 
   const getAppVersion = useCallback(async () => {
-    if (window.electron) {
-      return await window.electron.appVersion();
+    try {
+      if (window.electron) {
+        return await window.electron.appVersion();
+      }
+    } catch (error) {
+      console.error('Failed to get app version:', error);
     }
     return 'Not running in Electron';
   }, []);
 
   const getSystemInfo = useCallback(async () => {
-    if (window.electron) {
-      return await window.electron.systemInfo();
+    try {
+      if (window.electron) {
+        return await window.electron.systemInfo();
+      }
+    } catch (error) {
+      console.error('Failed to get system info:', error);
     }
     return {
       platform: 'browser',

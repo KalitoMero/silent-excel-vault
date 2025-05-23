@@ -5,7 +5,7 @@
 "scripts": {
   "dev": "vite",
   "build": "tsc && vite build",
-  "electron:dev": "concurrently \"cross-env ELECTRON=true vite\" \"electron electron/main.js\"",
+  "electron:dev": "concurrently \"cross-env ELECTRON=true NODE_ENV=development vite\" \"electron electron/main.js\"",
   "electron:build": "tsc && cross-env ELECTRON=true vite build",
   "electron:package": "npm run electron:build && electron-builder build --config electron-builder.json",
   "preview": "vite preview"

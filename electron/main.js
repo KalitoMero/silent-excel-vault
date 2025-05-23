@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const isDev = require('electron-is-dev');
+const isDev = process.env.NODE_ENV === 'development';
 
 // Keep a global reference of the window object to avoid
 // automatic garbage collection

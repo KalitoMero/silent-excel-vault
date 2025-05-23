@@ -1,6 +1,7 @@
 
 {
   "appId": "com.silent-excel-vault.app",
+  "productName": "Silent Excel Vault",
   "files": [
     "dist/**/*",
     "electron/**/*"
@@ -16,6 +17,8 @@
     "target": "nsis"
   },
   "linux": {
-    "target": ["AppImage", "deb"]
-  }
+    "target": ["AppImage", "deb"],
+    "category": "Office"
+  },
+  "npmRebuild": false
 }

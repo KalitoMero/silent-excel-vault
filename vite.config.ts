@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: true,
+    target: process.env.ELECTRON === 'true' ? 'chrome108' : 'esnext',
   },
-  base: process.env.ELECTRON === 'true' ? './' : '/', // Adjust base path for Electron
+  base: process.env.ELECTRON === 'true' ? './' : '/',
 }));
