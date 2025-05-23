@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -43,6 +44,35 @@ const Einstellungen = () => {
     auftragsnummerColumn: 1
   });
   const [completedOrders, setCompletedOrders] = useState<CompletedOrderEntry[]>([]);
+
+  // Helper functions must be defined before they are used in useMemo
+  const formatTimeFromMs = (ms: number) => {
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    
+    if (days > 0) {
+      return `${days} Tag${days > 1 ? 'e' : ''}, ${hours} Stunden, ${minutes} Minuten`;
+    } else {
+      return `${hours} Stunden, ${minutes} Minuten, ${seconds} Sekunden`;
+    }
+  };
+
+  const calculateAverageTime = (orders: CompletedOrderEntry[]) => {
+    let totalMilliseconds = 0;
+    
+    orders.forEach(order => {
+      const startTime = order.zeitstempel.getTime();
+      const endTime = order.abschlussZeitstempel.getTime();
+      totalMilliseconds += (endTime - startTime);
+    });
+    
+    const averageMs = totalMilliseconds / orders.length;
+    
+    // Convert average milliseconds to formatted string
+    return formatTimeFromMs(averageMs);
+  };
 
   // Load saved settings from localStorage when component mounts
   useEffect(() => {
@@ -111,34 +141,6 @@ const Einstellungen = () => {
       averagePrio2
     };
   }, [completedOrders]);
-
-  const calculateAverageTime = (orders: CompletedOrderEntry[]) => {
-    let totalMilliseconds = 0;
-    
-    orders.forEach(order => {
-      const startTime = order.zeitstempel.getTime();
-      const endTime = order.abschlussZeitstempel.getTime();
-      totalMilliseconds += (endTime - startTime);
-    });
-    
-    const averageMs = totalMilliseconds / orders.length;
-    
-    // Convert average milliseconds to formatted string
-    return formatTimeFromMs(averageMs);
-  };
-
-  const formatTimeFromMs = (ms: number) => {
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-    
-    if (days > 0) {
-      return `${days} Tag${days > 1 ? 'e' : ''}, ${hours} Stunden, ${minutes} Minuten`;
-    } else {
-      return `${hours} Stunden, ${minutes} Minuten, ${seconds} Sekunden`;
-    }
-  };
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('de-DE', {
