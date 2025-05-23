@@ -1,3 +1,4 @@
+
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,9 +45,9 @@ const PrioAuswaehlen = () => {
       duration: 2000,
     });
     
-    // Navigate to home1 page after 2 seconds
+    // Navigate to monitor page after 2 seconds
     setTimeout(() => {
-      navigate('/home1');
+      navigate('/monitor?autoReturn=true');
     }, 2000);
   };
 

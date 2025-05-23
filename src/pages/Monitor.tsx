@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -15,6 +15,20 @@ const Monitor = () => {
   const [prio1Orders, setPrio1Orders] = useState<OrderEntry[]>([]);
   const [prio2Orders, setPrio2Orders] = useState<OrderEntry[]>([]);
   const [, forceUpdate] = useState({});
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const autoReturn = searchParams.get('autoReturn') === 'true';
+
+  useEffect(() => {
+    // Auto-return to home page after 15 seconds if autoReturn is true
+    if (autoReturn) {
+      const timer = setTimeout(() => {
+        navigate('/');
+      }, 15000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [autoReturn, navigate]);
 
   useEffect(() => {
     // Load orders from localStorage on component mount
@@ -95,7 +109,14 @@ const Monitor = () => {
       </Button>
 
       <div className="max-w-6xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-center mb-8">Auftragsmonitor</h1>
+        <h1 className="text-3xl font-bold text-center mb-8">
+          Auftragsmonitor
+          {autoReturn && (
+            <div className="text-sm text-gray-600 font-normal mt-2">
+              Automatische Rückkehr zur Hauptseite in 15 Sekunden
+            </div>
+          )}
+        </h1>
         
         {/* Prio 1 Orders */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
