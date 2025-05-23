@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, CheckCircle } from 'lucide-react';
@@ -36,6 +35,11 @@ const Monitor = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const autoReturn = searchParams.get('autoReturn') === 'true';
+  
+  // Add a ref to store barcode input
+  const barcodeInputRef = useRef<string>('');
+  // Add a timeout ref for barcode detection
+  const barcodeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Auto-return to home page after 15 seconds if autoReturn is true
@@ -49,7 +53,7 @@ const Monitor = () => {
   }, [autoReturn, navigate]);
 
   useEffect(() => {
-    // Load column settings
+    // Load column settings and orders from localStorage
     const savedColumnSettings = localStorage.getItem('columnSettings');
     if (savedColumnSettings) {
       try {
@@ -98,6 +102,77 @@ const Monitor = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Add a new useEffect for capturing barcode scans
+  useEffect(() => {
+    // Function to handle keyboard events for barcode scanning
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore if the user is typing in an input field
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // If it's the Enter key and we have collected characters, process as barcode
+      if (event.key === 'Enter' && barcodeInputRef.current) {
+        const scannedBarcode = barcodeInputRef.current.trim();
+        console.log('Barcode scanned:', scannedBarcode);
+        processBarcode(scannedBarcode);
+        barcodeInputRef.current = ''; // Clear buffer after processing
+        return;
+      }
+
+      // Reset timeout to detect end of scanning
+      if (barcodeTimeoutRef.current) {
+        clearTimeout(barcodeTimeoutRef.current);
+      }
+      
+      // Set a timeout to clear the buffer if no new characters arrive
+      // (typical barcode scanners send characters very quickly)
+      barcodeTimeoutRef.current = setTimeout(() => {
+        barcodeInputRef.current = '';
+      }, 100);
+
+      // Only add printable characters to the buffer
+      if (event.key.length === 1) {
+        barcodeInputRef.current += event.key;
+      }
+    };
+
+    // Add and remove the event listener
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (barcodeTimeoutRef.current) {
+        clearTimeout(barcodeTimeoutRef.current);
+      }
+    };
+  }, []);  // Empty dependency array means this effect runs once on mount
+
+  // New function to process the barcode
+  const processBarcode = (barcode: string) => {
+    if (!barcode) {
+      return;
+    }
+    
+    // Search for the order in Prio 1 and Prio 2 lists
+    const allOrders = [...prio1Orders, ...prio2Orders];
+    const orderToComplete = allOrders.find(order => order.auftragsnummer === barcode);
+    
+    if (orderToComplete) {
+      completeOrder(orderToComplete);
+      setBarcodeValue(''); // Clear any value in the visible input field too
+      toast(`Auftrag ${barcode} wurde als abgeschlossen markiert`, {
+        duration: 3000,
+      });
+    } else {
+      toast(`Auftrag ${barcode} nicht gefunden`, {
+        duration: 3000,
+      });
+    }
+  };
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('de-DE', {
       day: '2-digit',
@@ -127,7 +202,7 @@ const Monitor = () => {
     }
   };
 
-  // Function to handle barcode scan completion
+  // Function to handle manual barcode entry (we'll keep this for fallback)
   const handleBarcodeScan = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       const auftragsnummer = barcodeValue.trim();
@@ -137,22 +212,7 @@ const Monitor = () => {
         return;
       }
       
-      // Search for the order in Prio 1 and Prio 2 lists
-      const allOrders = [...prio1Orders, ...prio2Orders];
-      const orderToComplete = allOrders.find(order => order.auftragsnummer === auftragsnummer);
-      
-      if (orderToComplete) {
-        completeOrder(orderToComplete);
-        setBarcodeValue('');
-        toast(`Auftrag ${auftragsnummer} wurde als abgeschlossen markiert`, {
-          duration: 3000,
-        });
-      } else {
-        toast(`Auftrag ${auftragsnummer} nicht gefunden`, {
-          duration: 3000,
-        });
-        setBarcodeValue('');
-      }
+      processBarcode(auftragsnummer);
     }
   };
 
@@ -222,7 +282,7 @@ const Monitor = () => {
           )}
         </h1>
         
-        {/* Barcode Scanner */}
+        {/* Barcode Scanner - Now just as a visible fallback */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="bg-blue-600 text-white">
             <CardTitle className="flex items-center gap-2">
@@ -233,20 +293,19 @@ const Monitor = () => {
           <CardContent className="p-4">
             <div className="space-y-2">
               <label htmlFor="barcode" className="text-sm font-medium">
-                Barcode scannen oder Betriebsauftragsnummer eingeben:
+                Betriebsauftragsnummer manuell eingeben (oder einfach Barcode scannen):
               </label>
               <Input
                 id="barcode"
                 type="text"
-                placeholder="Betriebsauftragsnummer scannen..."
+                placeholder="Betriebsauftragsnummer..."
                 value={barcodeValue}
                 onChange={(e) => setBarcodeValue(e.target.value)}
                 onKeyDown={handleBarcodeScan}
                 className="font-mono text-lg"
-                autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                Scannen Sie den Barcode oder geben Sie die Nummer ein und drücken Sie Enter, um den Auftrag abzuschließen.
+                Sie können jederzeit einen Barcode scannen, ohne dieses Feld vorher zu fokussieren.
               </p>
             </div>
           </CardContent>
