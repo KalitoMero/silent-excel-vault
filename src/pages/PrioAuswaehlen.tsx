@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
 import { OrderEntry } from './Monitor';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 
 const PrioAuswaehlen = () => {
   const [searchParams] = useSearchParams();
@@ -13,10 +13,8 @@ const PrioAuswaehlen = () => {
 
   const handlePrioSelect = (prio: number) => {
     if (!auftragsnummer) {
-      toast({
-        title: "Fehler",
-        description: "Keine Auftragsnummer gefunden",
-        variant: "destructive",
+      toast("Fehler: Keine Auftragsnummer gefunden", {
+        duration: 2000,
       });
       return;
     }
@@ -42,14 +40,15 @@ const PrioAuswaehlen = () => {
     
     console.log(`Auftragsnummer ${auftragsnummer} mit Priorität ${prio} ausgewählt`);
     
-    // Show success toast
-    toast({
-      title: "Auftrag gespeichert",
-      description: `Auftragsnummer ${auftragsnummer} mit Priorität ${prio} wurde gespeichert.`,
+    // Show success confirmation toast
+    toast(`Auftrag erfolgreich in Prio ${prio} übernommen.`, {
+      duration: 2000,
     });
     
-    // Navigate to monitor page
-    navigate('/monitor');
+    // Navigate to scanauftrag page after 2 seconds
+    setTimeout(() => {
+      navigate('/scanauftrag');
+    }, 2000);
   };
 
   return (
