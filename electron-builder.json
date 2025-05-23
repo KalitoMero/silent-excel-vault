@@ -1,0 +1,21 @@
+
+{
+  "appId": "com.silent-excel-vault.app",
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "directories": {
+    "buildResources": "assets",
+    "output": "electron-dist"
+  },
+  "mac": {
+    "category": "public.app-category.productivity"
+  },
+  "win": {
+    "target": "nsis"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"]
+  }
+}
