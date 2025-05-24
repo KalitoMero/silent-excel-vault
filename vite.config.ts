@@ -24,10 +24,6 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: true,
-    target: process.env.ELECTRON === 'true' ? 'esnext' : 'esnext',
-    rollupOptions: {
-      external: process.env.ELECTRON === 'true' ? ['electron'] : [],
-    },
   },
-  base: process.env.ELECTRON === 'true' ? './' : '/',
+  base: './',
 }));

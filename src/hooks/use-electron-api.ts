@@ -1,7 +1,6 @@
 
 import { useCallback, useState, useEffect } from 'react';
 
-// Define the ElectronAPI interface to match our preload script
 interface ElectronAPI {
   appVersion: () => Promise<string>;
   systemInfo: () => Promise<{
@@ -13,7 +12,6 @@ interface ElectronAPI {
   }>;
 }
 
-// Extend the Window interface
 declare global {
   interface Window {
     electron?: ElectronAPI;
@@ -24,45 +22,42 @@ export function useElectronApi() {
   const [isElectron, setIsElectron] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if we're running in Electron environment
-    const checkElectron = () => {
-      try {
-        setIsElectron(!!window.electron);
-      } catch (error) {
-        console.error('Error checking Electron environment:', error);
-        setIsElectron(false);
-      }
-    };
-    
-    checkElectron();
+    setIsElectron(!!window.electron);
   }, []);
 
-  const getAppVersion = useCallback(async () => {
-    try {
-      if (window.electron) {
-        return await window.electron.appVersion();
-      }
-    } catch (error) {
-      console.error('Failed to get app version:', error);
+  const getAppVersion = useCallback(async (): Promise<string> => {
+    if (!window.electron) {
+      return 'Not running in Electron';
     }
-    return 'Not running in Electron';
+    try {
+      return await window.electron.appVersion();
+    } catch (error) {
+      console.error('Error getting app version:', error);
+      return 'Error getting version';
+    }
   }, []);
 
   const getSystemInfo = useCallback(async () => {
-    try {
-      if (window.electron) {
-        return await window.electron.systemInfo();
-      }
-    } catch (error) {
-      console.error('Failed to get system info:', error);
+    if (!window.electron) {
+      return {
+        platform: 'browser',
+        arch: 'unknown',
+        version: 'unknown',
+        electronVersion: 'N/A',
+      };
     }
-    return {
-      platform: 'browser',
-      arch: 'unknown',
-      version: 'unknown',
-      electronVersion: 'N/A',
-      error: 'Not running in Electron environment'
-    };
+    try {
+      return await window.electron.systemInfo();
+    } catch (error) {
+      console.error('Error getting system info:', error);
+      return {
+        platform: 'error',
+        arch: 'error',
+        version: 'error',
+        electronVersion: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }, []);
 
   return {

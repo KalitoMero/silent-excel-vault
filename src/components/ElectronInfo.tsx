@@ -23,14 +23,14 @@ export function ElectronInfo() {
 
   useEffect(() => {
     const init = async () => {
-      try {
-        if (isElectron) {
+      if (isElectron) {
+        try {
           const version = await getAppVersion();
           setAppVersion(version);
+        } catch (err) {
+          console.error('Error getting app version:', err);
+          setError('Failed to get app version');
         }
-      } catch (err) {
-        console.error('Failed to initialize ElectronInfo:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error during initialization');
       }
     };
     
@@ -43,12 +43,9 @@ export function ElectronInfo() {
     try {
       const info = await getSystemInfo();
       setSystemInfo(info);
-      if (info.error) {
-        setError(info.error);
-      }
     } catch (err) {
-      console.error('Failed to fetch system info:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error fetching system info');
+      console.error('Error fetching system info:', err);
+      setError('Failed to fetch system info');
     } finally {
       setLoading(false);
     }
@@ -58,20 +55,20 @@ export function ElectronInfo() {
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle>
-          {isElectron ? 'Electron-Informationen' : 'Browserumgebung'}
+          {isElectron ? 'Electron Information' : 'Browser Environment'}
         </CardTitle>
         <CardDescription>
           {isElectron 
-            ? 'Informationen über die Electron-Umgebung'
-            : 'Diese App läuft aktuell im Browser, nicht in Electron.'}
+            ? 'Information about the Electron environment'
+            : 'This app is currently running in the browser, not in Electron.'}
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
         {isElectron && (
           <div>
-            <p className="text-sm font-medium">App-Version:</p>
-            <p className="text-sm">{appVersion || 'Wird geladen...'}</p>
+            <p className="text-sm font-medium">App Version:</p>
+            <p className="text-sm">{appVersion || 'Loading...'}</p>
           </div>
         )}
         
@@ -91,12 +88,12 @@ export function ElectronInfo() {
           </div>
         ) : systemInfo ? (
           <div className="space-y-2">
-            <p className="text-sm font-medium">System-Informationen:</p>
+            <p className="text-sm font-medium">System Information:</p>
             <ul className="text-sm space-y-1">
-              <li>Plattform: {systemInfo.platform}</li>
-              <li>Architektur: {systemInfo.arch}</li>
-              <li>Node.js-Version: {systemInfo.version}</li>
-              <li>Electron-Version: {systemInfo.electronVersion}</li>
+              <li>Platform: {systemInfo.platform}</li>
+              <li>Architecture: {systemInfo.arch}</li>
+              <li>Node.js Version: {systemInfo.version}</li>
+              <li>Electron Version: {systemInfo.electronVersion}</li>
             </ul>
           </div>
         ) : null}
@@ -109,7 +106,7 @@ export function ElectronInfo() {
             disabled={loading}
             variant="outline"
           >
-            {loading ? 'Wird geladen...' : 'System-Informationen abrufen'}
+            {loading ? 'Loading...' : 'Get System Info'}
           </Button>
         </CardFooter>
       )}
