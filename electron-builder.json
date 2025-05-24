@@ -21,5 +21,7 @@
     "target": ["AppImage"],
     "category": "Office"
   },
-  "npmRebuild": false
+  "npmRebuild": false,
+  "buildDependenciesFromSource": true,
+  "nodeGypRebuild": false
 }

@@ -1,3 +1,4 @@
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
@@ -25,8 +26,8 @@ function createWindow() {
   console.log('Loading URL:', startUrl);
   
   mainWindow.loadURL(startUrl).catch(err => {
-      console.error('Failed to load app:', err);
-    });
+    console.error('Failed to load app:', err);
+  });
 
   if (isDev) {
     mainWindow.webContents.openDevTools();
@@ -59,7 +60,7 @@ app.on('activate', () => {
   }
 });
 
-// Simple IPC handlers
+// Simple IPC handlers with better error handling
 ipcMain.handle('get-app-version', () => {
   try {
     return app.getVersion();

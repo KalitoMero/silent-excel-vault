@@ -20,9 +20,15 @@ declare global {
 
 export function useElectronApi() {
   const [isElectron, setIsElectron] = useState<boolean>(false);
+  const [isElectronError, setIsElectronError] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsElectron(!!window.electron);
+    try {
+      setIsElectron(!!window.electron);
+    } catch (error) {
+      console.error("Error detecting Electron environment:", error);
+      setIsElectronError(true);
+    }
   }, []);
 
   const getAppVersion = useCallback(async (): Promise<string> => {
@@ -62,6 +68,7 @@ export function useElectronApi() {
 
   return {
     isElectron,
+    isElectronError,
     getAppVersion,
     getSystemInfo
   };
