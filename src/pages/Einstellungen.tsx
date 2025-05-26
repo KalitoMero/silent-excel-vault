@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Save, Home, Download, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiService } from '@/services/api';
 import * as XLSX from 'xlsx';
 
 interface ColumnSetting {
@@ -44,6 +45,7 @@ const Einstellungen = () => {
     auftragsnummerColumn: 1
   });
   const [completedOrders, setCompletedOrders] = useState<CompletedOrderEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Helper functions must be defined before they are used in useMemo
   const formatTimeFromMs = (ms: number) => {
@@ -74,45 +76,59 @@ const Einstellungen = () => {
     return formatTimeFromMs(averageMs);
   };
 
-  // Load saved settings from localStorage when component mounts
+  // Load settings from API when component mounts
   useEffect(() => {
-    // Load column settings
-    const savedSettings = localStorage.getItem('columnSettings');
-    if (savedSettings) {
+    const loadData = async () => {
+      setLoading(true);
+      
       try {
-        setColumnSettings(JSON.parse(savedSettings));
-      } catch (error) {
-        console.error("Failed to parse saved settings:", error);
-      }
-    }
+        // Load column settings from API
+        const columnResult = await apiService.getColumnSettings();
+        if (columnResult.success && columnResult.settings) {
+          setColumnSettings(columnResult.settings);
+        } else {
+          console.error('Failed to load column settings:', columnResult.error);
+        }
 
-    // Load Excel settings
-    const savedExcelSettings = localStorage.getItem('excelSettings');
-    if (savedExcelSettings) {
-      try {
-        setExcelSettings(JSON.parse(savedExcelSettings));
-      } catch (error) {
-        console.error("Failed to parse Excel settings:", error);
-      }
-    }
+        // Load Excel settings from API
+        const excelResult = await apiService.getExcelSettings();
+        if (excelResult.success && excelResult.settings) {
+          setExcelSettings(excelResult.settings);
+        } else {
+          console.error('Failed to load Excel settings:', excelResult.error);
+        }
 
-    // Load completed orders
-    const archivedOrders = localStorage.getItem('completedOrders');
-    if (archivedOrders) {
-      try {
-        const parsedOrders = JSON.parse(archivedOrders, (key, value) => {
-          // Convert ISO string back to Date object for zeitstempel and abschlussZeitstempel
-          if (key === 'zeitstempel' || key === 'abschlussZeitstempel') {
-            return new Date(value);
-          }
-          return value;
+        // Load completed orders from API
+        const ordersResult = await apiService.getOrders();
+        if (ordersResult.success && ordersResult.orders) {
+          // Filter for completed orders and convert date strings to Date objects
+          const completed = ordersResult.orders
+            .filter(order => order.zusatzDaten?.completed === true)
+            .map(order => ({
+              ...order,
+              zeitstempel: new Date(order.zeitstempel),
+              abschlussZeitstempel: new Date(order.zusatzDaten?.abschlussZeitstempel || order.zeitstempel),
+              aufenthaltsZeitInQS: order.zusatzDaten?.aufenthaltsZeitInQS || 'Unbekannt'
+            }));
+          setCompletedOrders(completed);
+        } else {
+          console.error('Failed to load orders:', ordersResult.error);
+        }
+
+      } catch (error) {
+        console.error('Error loading data:', error);
+        toast({
+          title: "Fehler beim Laden",
+          description: "Daten konnten nicht von der Datenbank geladen werden.",
+          variant: "destructive"
         });
-        setCompletedOrders(parsedOrders);
-      } catch (error) {
-        console.error("Failed to parse completed orders:", error);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
+
+    loadData();
+  }, [toast]);
 
   // Calculate statistics for completed orders
   const statistics = useMemo(() => {
@@ -175,7 +191,7 @@ const Einstellungen = () => {
     setColumnSettings(columnSettings.filter(setting => setting.id !== id));
   };
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     // Validate settings
     const invalidSettings = columnSettings.some(
       setting => setting.columnNumber <= 0 || !setting.title || setting.displayPosition <= 0
@@ -190,16 +206,41 @@ const Einstellungen = () => {
       return;
     }
     
-    // Save column settings to localStorage
-    localStorage.setItem('columnSettings', JSON.stringify(columnSettings));
+    setLoading(true);
     
-    // Save excel settings to localStorage
-    localStorage.setItem('excelSettings', JSON.stringify(excelSettings));
-    
-    toast({
-      title: "Einstellungen gespeichert",
-      description: "Ihre Einstellungen wurden erfolgreich gespeichert."
-    });
+    try {
+      // Save Excel settings to API
+      const excelResult = await apiService.saveExcelSettings(excelSettings);
+      if (!excelResult.success) {
+        throw new Error(excelResult.error || 'Failed to save Excel settings');
+      }
+
+      // Save column settings to API (we'll need to implement this endpoint)
+      // For now, we'll store them in the Excel settings as well
+      const combinedSettings = {
+        ...excelSettings,
+        columnSettings: columnSettings
+      };
+      
+      const columnResult = await apiService.saveExcelSettings(combinedSettings);
+      if (!columnResult.success) {
+        throw new Error(columnResult.error || 'Failed to save column settings');
+      }
+      
+      toast({
+        title: "Einstellungen gespeichert",
+        description: "Ihre Einstellungen wurden erfolgreich in der Datenbank gespeichert."
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Fehler beim Speichern",
+        description: "Einstellungen konnten nicht in der Datenbank gespeichert werden.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Function to export completed orders to Excel
@@ -242,6 +283,17 @@ const Einstellungen = () => {
       description: `Die Datei "${filename}" wurde heruntergeladen.`
     });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Lade Daten aus der Datenbank...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
@@ -295,9 +347,10 @@ const Einstellungen = () => {
                   <Button 
                     onClick={saveSettings} 
                     className="bg-green-600 hover:bg-green-700"
+                    disabled={loading}
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Einstellungen speichern
+                    {loading ? 'Speichere...' : 'Einstellungen speichern'}
                   </Button>
                 </div>
               </CardContent>
@@ -393,9 +446,10 @@ const Einstellungen = () => {
                   <Button 
                     onClick={saveSettings} 
                     className="bg-green-600 hover:bg-green-700"
+                    disabled={loading}
                   >
                     <Save className="mr-2 h-4 w-4" />
-                    Einstellungen speichern
+                    {loading ? 'Speichere...' : 'Einstellungen speichern'}
                   </Button>
                 </div>
               </CardContent>
