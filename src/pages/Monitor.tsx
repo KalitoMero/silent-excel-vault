@@ -6,13 +6,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
-
-export interface OrderEntry {
-  auftragsnummer: string;
-  prioritaet: 1 | 2;
-  zeitstempel: Date;
-  zusatzDaten?: Record<string, any>;
-}
+import { apiService, OrderEntry } from '@/services/api';
 
 export interface CompletedOrderEntry extends OrderEntry {
   abschlussZeitstempel: Date;
@@ -53,34 +47,34 @@ const Monitor = () => {
   }, [autoReturn, navigate]);
 
   useEffect(() => {
-    // Load column settings and orders from localStorage
-    const savedColumnSettings = localStorage.getItem('columnSettings');
-    if (savedColumnSettings) {
-      try {
-        const parsedSettings = JSON.parse(savedColumnSettings);
-        // Sort by display position
-        parsedSettings.sort((a: ColumnSetting, b: ColumnSetting) => 
-          a.displayPosition - b.displayPosition
-        );
-        setColumnSettings(parsedSettings);
-      } catch (error) {
-        console.error("Failed to parse column settings:", error);
-      }
-    }
+    // Load column settings and orders from API
+    loadColumnSettings();
+    loadOrders();
+    
+    // Set up an interval to update the timers every second and reload orders
+    const intervalId = setInterval(() => {
+      forceUpdate({});
+      loadOrders(); // Reload orders to get fresh data
+    }, 5000); // Reload every 5 seconds
+    
+    // Clean up interval when component unmounts
+    return () => clearInterval(intervalId);
+  }, []);
 
-    // Load orders from localStorage on component mount
-    const loadOrders = () => {
-      const savedOrders = localStorage.getItem('orders');
-      if (savedOrders) {
-        const parsedOrders: OrderEntry[] = JSON.parse(savedOrders, (key, value) => {
-          // Convert ISO string back to Date object for zeitstempel
-          if (key === 'zeitstempel') return new Date(value);
-          return value;
-        });
+  // Load orders from API
+  const loadOrders = async () => {
+    try {
+      const response = await apiService.getOrders();
+      if (response.success && response.orders) {
+        // Convert timestamp strings back to Date objects
+        const orders = response.orders.map(order => ({
+          ...order,
+          zeitstempel: new Date(order.zeitstempel)
+        }));
         
         // Split orders by priority
-        const prio1 = parsedOrders.filter(order => order.prioritaet === 1);
-        const prio2 = parsedOrders.filter(order => order.prioritaet === 2);
+        const prio1 = orders.filter(order => order.prioritaet === 1);
+        const prio2 = orders.filter(order => order.prioritaet === 2);
         
         // Sort orders by timestamp (oldest first)
         prio1.sort((a, b) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
@@ -89,18 +83,26 @@ const Monitor = () => {
         setPrio1Orders(prio1);
         setPrio2Orders(prio2);
       }
-    };
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    }
+  };
 
-    loadOrders();
-    
-    // Set up an interval to update the timers every second
-    const intervalId = setInterval(() => {
-      forceUpdate({});
-    }, 1000);
-    
-    // Clean up interval when component unmounts
-    return () => clearInterval(intervalId);
-  }, []);
+  // Load column settings from API
+  const loadColumnSettings = async () => {
+    try {
+      const response = await apiService.getColumnSettings();
+      if (response.success && response.settings) {
+        // Sort by display position
+        const settings = response.settings.sort((a: ColumnSetting, b: ColumnSetting) => 
+          a.displayPosition - b.displayPosition
+        );
+        setColumnSettings(settings);
+      }
+    } catch (error) {
+      console.error('Error loading column settings:', error);
+    }
+  };
 
   // Add a new useEffect for capturing barcode scans
   useEffect(() => {
@@ -151,7 +153,7 @@ const Monitor = () => {
   }, []);  // Empty dependency array means this effect runs once on mount
 
   // New function to process the barcode
-  const processBarcode = (barcode: string) => {
+  const processBarcode = async (barcode: string) => {
     if (!barcode) {
       return;
     }
@@ -161,7 +163,7 @@ const Monitor = () => {
     const orderToComplete = allOrders.find(order => order.auftragsnummer === barcode);
     
     if (orderToComplete) {
-      completeOrder(orderToComplete);
+      await completeOrder(orderToComplete);
       setBarcodeValue(''); // Clear any value in the visible input field too
       toast(`Auftrag ${barcode} wurde als abgeschlossen markiert`, {
         duration: 3000,
@@ -217,44 +219,21 @@ const Monitor = () => {
   };
 
   // Function to mark an order as completed
-  const completeOrder = (order: OrderEntry) => {
-    const now = new Date();
-    const completedOrder: CompletedOrderEntry = {
-      ...order,
-      abschlussZeitstempel: now,
-      aufenthaltsZeitInQS: calculateTimeInQS(order.zeitstempel)
-    };
-    
-    // Save to archive
-    saveToArchive(completedOrder);
-    
-    // Remove from active orders
-    removeFromActiveOrders(order.auftragsnummer);
-  };
-
-  // Save completed order to archive
-  const saveToArchive = (completedOrder: CompletedOrderEntry) => {
-    const existingArchive = localStorage.getItem('completedOrders');
-    let archive: CompletedOrderEntry[] = existingArchive 
-      ? JSON.parse(existingArchive)
-      : [];
-    
-    archive.push(completedOrder);
-    localStorage.setItem('completedOrders', JSON.stringify(archive));
-  };
-
-  // Remove order from active orders
-  const removeFromActiveOrders = (auftragsnummer: string) => {
-    // Update state
-    setPrio1Orders(prev => prev.filter(order => order.auftragsnummer !== auftragsnummer));
-    setPrio2Orders(prev => prev.filter(order => order.auftragsnummer !== auftragsnummer));
-    
-    // Update localStorage
-    const existingOrders = localStorage.getItem('orders');
-    if (existingOrders) {
-      const orders: OrderEntry[] = JSON.parse(existingOrders);
-      const updatedOrders = orders.filter(order => order.auftragsnummer !== auftragsnummer);
-      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+  const completeOrder = async (order: OrderEntry) => {
+    try {
+      const response = await apiService.completeOrder(order.auftragsnummer);
+      
+      if (response.success) {
+        // Reload orders after completion
+        await loadOrders();
+      } else {
+        throw new Error(response.error || 'Fehler beim Abschließen des Auftrags');
+      }
+    } catch (error) {
+      console.error('Error completing order:', error);
+      toast("Fehler beim Abschließen des Auftrags", {
+        duration: 3000,
+      });
     }
   };
 
@@ -364,7 +343,7 @@ const Monitor = () => {
           </CardContent>
         </Card>
         
-        {/* Barcode Scanner - Moved below Prio 2 section */}
+        {/* Barcode Scanner */}
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="bg-blue-600 text-white">
             <CardTitle className="flex items-center gap-2">
