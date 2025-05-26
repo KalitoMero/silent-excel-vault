@@ -24,13 +24,6 @@ export default defineConfig(({ mode }) => ({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: true,
-    rollupOptions: {
-      // Avoid native dependencies for web-only preview
-      external: mode === 'development' ? [] : ['electron', 'fs', 'path', 'os'],
-    }
   },
   base: './',
-  optimizeDeps: {
-    exclude: ['electron']
-  }
 }));
