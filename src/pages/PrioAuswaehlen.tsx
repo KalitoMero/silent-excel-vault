@@ -5,14 +5,13 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
 import { OrderEntry } from './Monitor';
 import { toast } from '@/components/ui/sonner';
-import { apiService } from '@/services/api';
 
 const PrioAuswaehlen = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
 
-  const handlePrioSelect = async (prio: number) => {
+  const handlePrioSelect = (prio: number) => {
     if (!auftragsnummer) {
       toast("Fehler: Keine Auftragsnummer gefunden", {
         duration: 2000,
@@ -20,28 +19,24 @@ const PrioAuswaehlen = () => {
       return;
     }
 
-    try {
-      // Create new order entry
-      const newOrder: OrderEntry = {
-        auftragsnummer,
-        prioritaet: prio as 1 | 2,
-        zeitstempel: new Date(),
-        zusatzDaten: {}
-      };
+    // Create new order entry
+    const newOrder: OrderEntry = {
+      auftragsnummer,
+      prioritaet: prio as 1 | 2,
+      zeitstempel: new Date(),
+      zusatzDaten: {}
+    };
 
-      // Try to find the order in the Excel data from API
-      const excelDataResult = await apiService.getExcelData();
-      const excelSettingsResult = await apiService.getExcelSettings();
-      
-      if (excelDataResult.success && excelDataResult.data && excelSettingsResult.success) {
-        const data = excelDataResult.data;
-        const excelSettings = excelSettingsResult.settings;
-        
-        // Get column settings from localStorage (temporarily until we move this to API too)
+    // Try to find the order in the Excel data
+    const excelData = localStorage.getItem('excelData');
+    if (excelData) {
+      try {
+        const data = JSON.parse(excelData);
+        const excelSettings = JSON.parse(localStorage.getItem('excelSettings') || '{"auftragsnummerColumn": 1}');
         const columnSettings = JSON.parse(localStorage.getItem('columnSettings') || '[]');
         
         // Find the row with the matching Betriebsauftragsnummer
-        const auftragsnummerColIndex = excelSettings.auftragsnummerColumn - 1;
+        const auftragsnummerColIndex = excelSettings.auftragsnummerColumn - 1; // Convert to 0-based index
         
         const foundRow = data.find((row: any[]) => 
           row[auftragsnummerColIndex] && 
@@ -49,9 +44,9 @@ const PrioAuswaehlen = () => {
         );
         
         if (foundRow) {
-          // Extract additional column data
+          // We found the row, now extract the additional column data
           columnSettings.forEach((setting: any) => {
-            const colIndex = setting.columnNumber - 1;
+            const colIndex = setting.columnNumber - 1; // Convert to 0-based index
             if (colIndex >= 0 && colIndex < foundRow.length) {
               newOrder.zusatzDaten[setting.title] = foundRow[colIndex];
             }
@@ -61,30 +56,34 @@ const PrioAuswaehlen = () => {
         } else {
           console.log(`Auftrag ${auftragsnummer} wurde nicht in Excel-Daten gefunden.`);
         }
+      } catch (error) {
+        console.error("Fehler beim Parsen der Excel-Daten:", error);
       }
-
-      // Save to database via API
-      const result = await apiService.saveOrder(newOrder);
-      
-      if (result.success) {
-        console.log(`Auftragsnummer ${auftragsnummer} mit Priorität ${prio} ausgewählt`);
-        
-        toast(`Auftrag erfolgreich in Prio ${prio} übernommen.`, {
-          duration: 2000,
-        });
-        
-        setTimeout(() => {
-          navigate('/monitor?autoReturn=true');
-        }, 2000);
-      } else {
-        throw new Error(result.error || 'Failed to save order');
-      }
-    } catch (error) {
-      console.error('Error saving order:', error);
-      toast("Fehler beim Speichern des Auftrags", {
-        duration: 2000,
-      });
     }
+
+    // Get existing orders from localStorage
+    const existingOrdersJson = localStorage.getItem('orders');
+    let orders: OrderEntry[] = existingOrdersJson 
+      ? JSON.parse(existingOrdersJson) 
+      : [];
+    
+    // Add the new order
+    orders.push(newOrder);
+    
+    // Save to localStorage
+    localStorage.setItem('orders', JSON.stringify(orders));
+    
+    console.log(`Auftragsnummer ${auftragsnummer} mit Priorität ${prio} ausgewählt`);
+    
+    // Show success confirmation toast
+    toast(`Auftrag erfolgreich in Prio ${prio} übernommen.`, {
+      duration: 2000,
+    });
+    
+    // Navigate to monitor page after 2 seconds
+    setTimeout(() => {
+      navigate('/monitor?autoReturn=true');
+    }, 2000);
   };
 
   return (

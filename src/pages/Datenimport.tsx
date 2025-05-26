@@ -5,7 +5,6 @@ import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Home } from
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { apiService } from '@/services/api';
 import * as XLSX from 'xlsx';
 
 const Datenimport = () => {
@@ -65,7 +64,7 @@ const Datenimport = () => {
     try {
       // Process Excel file
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         try {
           const data = e.target?.result;
           const workbook = XLSX.read(data, { type: 'binary' });
@@ -73,19 +72,16 @@ const Datenimport = () => {
           const sheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
           
-          // Send data to API instead of localStorage
-          const result = await apiService.importExcelData(file.name, jsonData);
+          // Store processed data in localStorage
+          localStorage.setItem('excelData', JSON.stringify(jsonData));
           
-          if (result.success) {
-            console.log('Datei wird verarbeitet:', file.name);
-            setUploadStatus('success');
-            toast({
-              title: "Upload erfolgreich",
-              description: `Die Datei "${file.name}" wurde erfolgreich hochgeladen und in der Datenbank gespeichert.`,
-            });
-          } else {
-            throw new Error(result.error || 'Import failed');
-          }
+          console.log('Datei wird verarbeitet:', file.name);
+          
+          setUploadStatus('success');
+          toast({
+            title: "Upload erfolgreich",
+            description: `Die Datei "${file.name}" wurde erfolgreich hochgeladen und verarbeitet.`,
+          });
         } catch (error) {
           console.error('Verarbeitungsfehler:', error);
           setUploadStatus('error');
