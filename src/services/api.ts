@@ -1,4 +1,3 @@
-
 const API_BASE_URL = '/api';
 
 export interface OrderEntry {
@@ -37,7 +36,7 @@ class ApiService {
         
         // Check if we're getting HTML instead of an API response
         if (errorText.includes('<!DOCTYPE html>')) {
-          throw new Error(`Backend server not available. Please ensure your PostgreSQL API server is running on port 3001. Status: ${response.status}`);
+          throw new Error(`Backend server not available. Please ensure your PostgreSQL API server is running on port 3002. Status: ${response.status}`);
         }
         
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -50,7 +49,7 @@ class ApiService {
         
         // Check if we're getting HTML instead of an API response
         if (responseText.includes('<!DOCTYPE html>')) {
-          throw new Error('Backend server not available. Please ensure your PostgreSQL API server is running on port 3001.');
+          throw new Error('Backend server not available. Please ensure your PostgreSQL API server is running on port 3002.');
         }
         
         throw new Error('Server returned non-JSON response');
