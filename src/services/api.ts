@@ -18,6 +18,8 @@ export interface ExcelData {
 class ApiService {
   private async fetchWithErrorHandling(url: string, options?: RequestInit) {
     try {
+      console.log('Making API request to:', url);
+      
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -26,11 +28,25 @@ class ApiService {
         ...options,
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
-      return await response.json();
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON response received:', responseText);
+        throw new Error('Server returned non-JSON response');
+      }
+
+      const jsonData = await response.json();
+      console.log('JSON response:', jsonData);
+      return jsonData;
     } catch (error) {
       console.error('API request failed:', error);
       throw error;
