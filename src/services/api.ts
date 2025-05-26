@@ -69,6 +69,17 @@ class ApiService {
       body: JSON.stringify({ settings }),
     });
   }
+
+  async getColumnSettings(): Promise<{ success: boolean; settings?: any[]; error?: string }> {
+    return this.fetchWithErrorHandling(`${API_BASE_URL}/column-settings`);
+  }
+
+  async completeOrder(auftragsnummer: string): Promise<{ success: boolean; error?: string }> {
+    return this.fetchWithErrorHandling(`${API_BASE_URL}/complete-order`, {
+      method: 'POST',
+      body: JSON.stringify({ auftragsnummer }),
+    });
+  }
 }
 
 export const apiService = new ApiService();
