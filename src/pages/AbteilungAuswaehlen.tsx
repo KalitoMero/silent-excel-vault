@@ -4,33 +4,48 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-interface Department {
+interface AdditionalInfo {
   id: string;
   name: string;
+  departmentId: string;
 }
 
 const AbteilungAuswaehlen = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
-  const prioritaet = searchParams.get('prioritaet') || '';
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const abteilung = searchParams.get('abteilung') || '';
+  const [additionalInfos, setAdditionalInfos] = useState<AdditionalInfo[]>([]);
 
   useEffect(() => {
-    // Load departments from localStorage
+    // Load additional infos from localStorage and filter by department
+    const savedAdditionalInfos = localStorage.getItem('additionalInfos');
     const savedDepartments = localStorage.getItem('departments');
-    if (savedDepartments) {
+    
+    if (savedAdditionalInfos && savedDepartments) {
       try {
-        setDepartments(JSON.parse(savedDepartments));
+        const allAdditionalInfos = JSON.parse(savedAdditionalInfos);
+        const departments = JSON.parse(savedDepartments);
+        
+        // Find the department ID for the selected department
+        const selectedDepartment = departments.find((dept: any) => dept.name === abteilung);
+        
+        if (selectedDepartment) {
+          // Filter additional infos for this department
+          const filteredInfos = allAdditionalInfos.filter(
+            (info: AdditionalInfo) => info.departmentId === selectedDepartment.id
+          );
+          setAdditionalInfos(filteredInfos);
+        }
       } catch (error) {
-        console.error('Error loading departments:', error);
-        setDepartments([]);
+        console.error('Error loading additional infos:', error);
+        setAdditionalInfos([]);
       }
     }
-  }, []);
+  }, [abteilung]);
 
-  const handleDepartmentSelect = (departmentName: string) => {
-    navigate(`/zusatzinfo-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&prioritaet=${prioritaet}&abteilung=${encodeURIComponent(departmentName)}`);
+  const handleAdditionalInfoSelect = (additionalInfo: string) => {
+    navigate(`/prio-final-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=${encodeURIComponent(additionalInfo)}`);
   };
 
   return (
@@ -61,35 +76,35 @@ const AbteilungAuswaehlen = () => {
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-2xl">Abteilung auswählen</CardTitle>
+            <CardTitle className="text-2xl">Erstteilinformationen auswählen</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
               <div>
                 <p className="text-lg font-medium mb-2">Betriebsauftragsnummer:</p>
                 <p className="text-xl bg-gray-100 p-3 rounded-md mb-4">{auftragsnummer}</p>
-                <p className="text-lg font-medium mb-2">Priorität:</p>
-                <p className="text-xl bg-gray-100 p-3 rounded-md">{prioritaet}</p>
+                <p className="text-lg font-medium mb-2">Abteilung:</p>
+                <p className="text-xl bg-gray-100 p-3 rounded-md">{abteilung}</p>
               </div>
               
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Verfügbare Abteilungen:</h3>
-                {departments.length > 0 ? (
+                <h3 className="text-lg font-medium">Verfügbare Erstteilinformationen für {abteilung}:</h3>
+                {additionalInfos.length > 0 ? (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {departments.map((department) => (
+                    {additionalInfos.map((info) => (
                       <Button
-                        key={department.id}
-                        onClick={() => handleDepartmentSelect(department.name)}
+                        key={info.id}
+                        onClick={() => handleAdditionalInfoSelect(info.name)}
                         variant="outline"
                         className="h-auto p-4 text-left justify-start"
                       >
-                        {department.name}
+                        {info.name}
                       </Button>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Keine Abteilungen konfiguriert.</p>
+                    <p className="text-gray-500 mb-4">Keine Erstteilinformationen für "{abteilung}" konfiguriert.</p>
                     <Button variant="outline" asChild>
                       <Link to="/einstellungen">
                         Zu den Einstellungen

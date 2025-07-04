@@ -322,7 +322,7 @@ const Monitor = () => {
                     <TableHead>Zeitstempel</TableHead>
                     <TableHead>Aufenthalt in QS</TableHead>
                     <TableHead>Abteilung</TableHead>
-                    <TableHead>Zusatzinfo</TableHead>
+                    <TableHead>Erstteilinformation</TableHead>
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
@@ -367,7 +367,7 @@ const Monitor = () => {
                     <TableHead>Zeitstempel</TableHead>
                     <TableHead>Aufenthalt in QS</TableHead>
                     <TableHead>Abteilung</TableHead>
-                    <TableHead>Zusatzinfo</TableHead>
+                    <TableHead>Erstteilinformation</TableHead>
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}

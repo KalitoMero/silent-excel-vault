@@ -4,12 +4,35 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
-import { apiService, OrderEntry } from '@/services/api';
+import { useEffect, useState } from 'react';
+
+interface Department {
+  id: string;
+  name: string;
+}
 
 const PrioAuswaehlen = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+  useEffect(() => {
+    // Load departments from localStorage
+    const savedDepartments = localStorage.getItem('departments');
+    if (savedDepartments) {
+      try {
+        setDepartments(JSON.parse(savedDepartments));
+      } catch (error) {
+        console.error('Error loading departments:', error);
+        setDepartments([]);
+      }
+    }
+  }, []);
+
+  const handleDepartmentSelect = (departmentName: string) => {
+    navigate(`/zusatzinfo-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(departmentName)}`);
+  };
 
   const handlePrioSelect = (prio: number) => {
     if (!auftragsnummer) {
@@ -19,8 +42,8 @@ const PrioAuswaehlen = () => {
       return;
     }
 
-    // Navigate to department selection
-    navigate(`/abteilung-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&prioritaet=${prio}`);
+    // Navigate to department selection first
+    navigate(`/abteilung-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}`);
   };
 
   return (
@@ -51,7 +74,7 @@ const PrioAuswaehlen = () => {
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-2xl">Prio auswählen</CardTitle>
+            <CardTitle className="text-2xl">Abteilung auswählen</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
@@ -60,22 +83,31 @@ const PrioAuswaehlen = () => {
                 <p className="text-xl bg-gray-100 p-3 rounded-md">{auftragsnummer}</p>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button 
-                  onClick={() => handlePrioSelect(1)}
-                  size="lg" 
-                  className="bg-amber-500 hover:bg-amber-600 px-10 py-6 text-xl h-auto"
-                >
-                  Prio 1
-                </Button>
-                <Button 
-                  onClick={() => handlePrioSelect(2)}
-                  variant="outline"
-                  size="lg" 
-                  className="border-slate-400 hover:bg-slate-100 px-10 py-6 text-xl h-auto"
-                >
-                  Prio 2
-                </Button>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Verfügbare Abteilungen:</h3>
+                {departments.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {departments.map((department) => (
+                      <Button
+                        key={department.id}
+                        onClick={() => handleDepartmentSelect(department.name)}
+                        variant="outline"
+                        className="h-auto p-4 text-left justify-start"
+                      >
+                        {department.name}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Keine Abteilungen konfiguriert.</p>
+                    <Button variant="outline" asChild>
+                      <Link to="/einstellungen">
+                        Zu den Einstellungen
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

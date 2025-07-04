@@ -99,7 +99,7 @@ const SelectionSettings = () => {
 
     toast({
       title: "Abteilung entfernt",
-      description: "Die Abteilung und alle zugehörigen Zusatzinformationen wurden entfernt."
+      description: "Die Abteilung und alle zugehörigen Erstteilinformationen wurden entfernt."
     });
   };
 
@@ -107,7 +107,7 @@ const SelectionSettings = () => {
     if (!newAdditionalInfoName.trim()) {
       toast({
         title: "Ungültige Eingabe",
-        description: "Bitte geben Sie einen Namen für die Zusatzinformation ein.",
+        description: "Bitte geben Sie einen Namen für die Erstteilinformation ein.",
         variant: "destructive"
       });
       return;
@@ -134,7 +134,7 @@ const SelectionSettings = () => {
     setNewAdditionalInfoName('');
 
     toast({
-      title: "Zusatzinformation hinzugefügt",
+      title: "Erstteilinformation hinzugefügt",
       description: `"${newAdditionalInfo.name}" wurde erfolgreich hinzugefügt.`
     });
   };
@@ -145,8 +145,8 @@ const SelectionSettings = () => {
     localStorage.setItem('additionalInfos', JSON.stringify(updatedAdditionalInfos));
 
     toast({
-      title: "Zusatzinformation entfernt",
-      description: "Die Zusatzinformation wurde erfolgreich entfernt."
+      title: "Erstteilinformation entfernt",
+      description: "Die Erstteilinformation wurde erfolgreich entfernt."
     });
   };
 
@@ -220,7 +220,7 @@ const SelectionSettings = () => {
       {/* Additional Infos Section */}
       <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle>Zusatzinformationen verwalten</CardTitle>
+          <CardTitle>Erstteilinformationen verwalten</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -240,7 +240,7 @@ const SelectionSettings = () => {
               
               <Input
                 type="text"
-                placeholder="Neue Zusatzinfo (z.B. Maschine 3)"
+                placeholder="Neue Erstteilinformation (z.B. Maschine 3)"
                 value={newAdditionalInfoName}
                 onChange={(e) => setNewAdditionalInfoName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addAdditionalInfo()}
@@ -258,7 +258,7 @@ const SelectionSettings = () => {
 
             {departments.length === 0 && (
               <p className="text-sm text-gray-500">
-                Erstellen Sie zuerst Abteilungen, um Zusatzinformationen hinzufügen zu können.
+                Erstellen Sie zuerst Abteilungen, um Erstteilinformationen hinzufügen zu können.
               </p>
             )}
 
@@ -266,7 +266,7 @@ const SelectionSettings = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Zusatzinformation</TableHead>
+                    <TableHead>Erstteilinformation</TableHead>
                     <TableHead>Abteilung</TableHead>
                     <TableHead className="w-20">Aktion</TableHead>
                   </TableRow>
@@ -291,7 +291,7 @@ const SelectionSettings = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={3} className="text-center py-4 text-gray-500">
-                        Noch keine Zusatzinformationen vorhanden.
+                        Noch keine Erstteilinformationen vorhanden.
                       </TableCell>
                     </TableRow>
                   )}
