@@ -180,7 +180,7 @@ const MediaInfoAuswaehlen = () => {
           await videoRef.current.play();
         }
         
-        toast("Kamera aktiviert - Aufnahme startet...", { duration: 2000 });
+        
         
         // Start recording with the new stream
         const mediaRecorder = new MediaRecorder(mediaStream);
