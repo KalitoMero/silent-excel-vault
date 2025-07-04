@@ -178,6 +178,8 @@ const Monitor = () => {
         duration: 3000,
       });
     } else {
+      // Clear the input field when order is not found
+      setBarcodeValue('');
       toast(`Auftrag ${barcode} nicht gefunden`, {
         duration: 3000,
       });
@@ -199,17 +201,16 @@ const Monitor = () => {
     const now = new Date();
     const diffMs = now.getTime() - zeitstempel.getTime();
     
-    // Convert to seconds, minutes, hours, and days
-    const seconds = Math.floor((diffMs / 1000) % 60);
+    // Convert to minutes, hours, and days
     const minutes = Math.floor((diffMs / (1000 * 60)) % 60);
     const hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
     // Format the string based on whether it's more or less than 24 hours
     if (days > 0) {
-      return `${days} Tag${days > 1 ? 'e' : ''}, ${hours} Stunden, ${minutes} Minuten, ${seconds} Sekunden`;
+      return `${days} Tag${days > 1 ? 'e' : ''}, ${hours} Stunden, ${minutes} Minuten`;
     } else {
-      return `${hours} Stunden, ${minutes} Minuten, ${seconds} Sekunden`;
+      return `${hours} Stunden, ${minutes} Minuten`;
     }
   };
 
