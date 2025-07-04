@@ -164,7 +164,24 @@ const MediaInfoAuswaehlen = () => {
   const startRecording = async () => {
     if (!stream) {
       await startCamera();
+      // Wait a bit for camera to initialize, then start recording
+      setTimeout(() => {
+        if (!isRecording) {
+          startRecording();
+        }
+      }, 1000);
       return;
+    }
+
+    // Ensure video is playing before starting recording
+    if (videoRef.current && stream) {
+      try {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        console.log('Video started before recording');
+      } catch (error) {
+        console.error('Could not start video before recording:', error);
+      }
     }
 
     try {
