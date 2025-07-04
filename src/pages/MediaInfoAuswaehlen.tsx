@@ -347,12 +347,47 @@ const MediaInfoAuswaehlen = () => {
                       autoPlay
                       muted
                       playsInline
-                      className="w-full max-w-md mx-auto rounded-lg border-2 border-primary"
-                      style={{ transform: 'scaleX(-1)' }}
+                      className="w-full max-w-md mx-auto rounded-lg border-2 border-primary bg-gray-200"
+                      style={{ 
+                        transform: 'scaleX(-1)',
+                        minWidth: '320px',
+                        minHeight: '240px',
+                        objectFit: 'cover'
+                      }}
+                      onClick={async () => {
+                        // Ensure video plays on user interaction
+                        if (videoRef.current) {
+                          try {
+                            await videoRef.current.play();
+                            console.log('Video play triggered by user click');
+                          } catch (e) {
+                            console.error('Manual play failed:', e);
+                          }
+                        }
+                      }}
                     />
                     <p className="text-center text-sm text-gray-600 mt-2">
-                      {isRecording ? "Aufnahme läuft..." : "Live-Vorschau (bereit zur Aufnahme)"}
+                      {isRecording ? "Aufnahme läuft..." : "Live-Vorschau (klicken zum Aktivieren)"}
                     </p>
+                    <button 
+                      onClick={async () => {
+                        if (videoRef.current && stream) {
+                          // Force refresh the video stream
+                          videoRef.current.srcObject = null;
+                          await new Promise(resolve => setTimeout(resolve, 100));
+                          videoRef.current.srcObject = stream;
+                          try {
+                            await videoRef.current.play();
+                            console.log('Video manually restarted');
+                          } catch (e) {
+                            console.error('Manual restart failed:', e);
+                          }
+                        }
+                      }}
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded text-sm"
+                    >
+                      Video neu laden
+                    </button>
                   </div>
                 )}
                 
