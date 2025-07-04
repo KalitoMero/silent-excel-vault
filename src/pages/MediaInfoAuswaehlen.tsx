@@ -91,6 +91,13 @@ const MediaInfoAuswaehlen = () => {
 
   const startCamera = async () => {
     try {
+      // Stop any existing stream first
+      if (stream) {
+        console.log('Stopping existing stream...');
+        stream.getTracks().forEach(track => track.stop());
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure cleanup
+      }
+
       console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
@@ -98,12 +105,6 @@ const MediaInfoAuswaehlen = () => {
       });
       
       console.log('Camera access granted, setting up stream...');
-      console.log('Stream tracks:', mediaStream.getTracks().map(track => ({
-        kind: track.kind,
-        enabled: track.enabled,
-        readyState: track.readyState
-      })));
-      
       setStream(mediaStream);
       setHasStream(true);
       
@@ -155,6 +156,8 @@ const MediaInfoAuswaehlen = () => {
         toast("Kamera-Zugriff verweigert. Bitte erlauben Sie den Zugriff.", { duration: 5000 });
       } else if (error.name === 'NotFoundError') {
         toast("Keine Kamera gefunden", { duration: 3000 });
+      } else if (error.name === 'NotReadableError') {
+        toast("Kamera ist bereits in Verwendung. Bitte schließen Sie andere Apps die die Kamera verwenden.", { duration: 5000 });
       } else {
         toast("Fehler beim Zugriff auf die Kamera", { duration: 3000 });
       }
@@ -163,20 +166,42 @@ const MediaInfoAuswaehlen = () => {
 
   const startRecording = async () => {
     try {
-      // Stop any existing stream first to avoid "device in use" error
+      // Stop any existing streams completely
       if (stream) {
         console.log('Stopping existing stream...');
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach(track => {
+          track.stop();
+          console.log('Stopped track:', track.kind, track.readyState);
+        });
         setStream(null);
         setHasStream(false);
+        // Wait a bit longer for complete cleanup
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Always get a fresh stream for recording
+      // Also stop any other potential video streams
+      if (videoRef.current && videoRef.current.srcObject) {
+        const oldStream = videoRef.current.srcObject as MediaStream;
+        if (oldStream) {
+          oldStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('Stopped old video track:', track.kind);
+          });
+        }
+        videoRef.current.srcObject = null;
+      }
+
+      // Request fresh camera access
       console.log('Starting fresh camera stream for recording...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
         audio: true 
       });
+      
+      console.log('Fresh stream obtained, tracks:', mediaStream.getTracks().map(track => ({
+        kind: track.kind,
+        readyState: track.readyState
+      })));
       
       setStream(mediaStream);
       setHasStream(true);
@@ -234,7 +259,7 @@ const MediaInfoAuswaehlen = () => {
       if (error.name === 'NotAllowedError') {
         toast("Kamera-Zugriff verweigert. Bitte erlauben Sie den Zugriff.", { duration: 5000 });
       } else if (error.name === 'NotReadableError') {
-        toast("Kamera ist bereits in Verwendung. Bitte versuchen Sie es erneut.", { duration: 3000 });
+        toast("Kamera ist bereits in Verwendung. Bitte schließen Sie andere Apps/Tabs die die Kamera verwenden und versuchen Sie es erneut.", { duration: 5000 });
       } else {
         toast("Fehler beim Starten der Aufnahme", { duration: 3000 });
       }
