@@ -219,6 +219,14 @@ const MediaInfoAuswaehlen = () => {
         try {
           await video.play();
           console.log('Video preview started successfully');
+          
+          // Apply refresh logic to ensure immediate visibility
+          await new Promise(resolve => setTimeout(resolve, 100));
+          video.srcObject = null;
+          await new Promise(resolve => setTimeout(resolve, 100));
+          video.srcObject = mediaStream;
+          await video.play();
+          console.log('Video refreshed for immediate visibility');
         } catch (playError) {
           console.error('Error starting video preview:', playError);
           // Force video to play
