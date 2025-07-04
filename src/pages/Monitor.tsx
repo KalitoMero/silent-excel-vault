@@ -47,60 +47,69 @@ const Monitor = () => {
   }, [autoReturn, navigate]);
 
   useEffect(() => {
-    // Load column settings and orders from API
+    // Load column settings and orders from localStorage
     loadColumnSettings();
     loadOrders();
     
-    // Set up an interval to update the timers every second and reload orders
+    // Set up an interval to update the timers every second
     const intervalId = setInterval(() => {
       forceUpdate({});
-      loadOrders(); // Reload orders to get fresh data
-    }, 5000); // Reload every 5 seconds
+    }, 1000); // Update every second for time display
     
     // Clean up interval when component unmounts
     return () => clearInterval(intervalId);
   }, []);
 
-  // Load orders from API
-  const loadOrders = async () => {
+  // Load orders from localStorage
+  const loadOrders = () => {
     try {
-      const response = await apiService.getOrders();
-      if (response.success && response.orders) {
-        // Convert timestamp strings back to Date objects
-        const orders = response.orders.map(order => ({
-          ...order,
-          zeitstempel: new Date(order.zeitstempel)
-        }));
+      const ordersStr = localStorage.getItem('orders');
+      if (ordersStr) {
+        const orders = JSON.parse(ordersStr, (key, value) => {
+          if (key === 'zeitstempel') {
+            return new Date(value);
+          }
+          return value;
+        });
         
         // Split orders by priority
-        const prio1 = orders.filter(order => order.prioritaet === 1);
-        const prio2 = orders.filter(order => order.prioritaet === 2);
+        const prio1 = orders.filter((order: OrderEntry) => order.prioritaet === 1);
+        const prio2 = orders.filter((order: OrderEntry) => order.prioritaet === 2);
         
         // Sort orders by timestamp (oldest first)
-        prio1.sort((a, b) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
-        prio2.sort((a, b) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
+        prio1.sort((a: OrderEntry, b: OrderEntry) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
+        prio2.sort((a: OrderEntry, b: OrderEntry) => a.zeitstempel.getTime() - b.zeitstempel.getTime());
         
         setPrio1Orders(prio1);
         setPrio2Orders(prio2);
+      } else {
+        setPrio1Orders([]);
+        setPrio2Orders([]);
       }
     } catch (error) {
       console.error('Error loading orders:', error);
+      setPrio1Orders([]);
+      setPrio2Orders([]);
     }
   };
 
-  // Load column settings from API
-  const loadColumnSettings = async () => {
+  // Load column settings from localStorage
+  const loadColumnSettings = () => {
     try {
-      const response = await apiService.getColumnSettings();
-      if (response.success && response.settings) {
+      const settingsStr = localStorage.getItem('columnSettings');
+      if (settingsStr) {
+        const settings = JSON.parse(settingsStr);
         // Sort by display position
-        const settings = response.settings.sort((a: ColumnSetting, b: ColumnSetting) => 
+        settings.sort((a: ColumnSetting, b: ColumnSetting) => 
           a.displayPosition - b.displayPosition
         );
         setColumnSettings(settings);
+      } else {
+        setColumnSettings([]);
       }
     } catch (error) {
       console.error('Error loading column settings:', error);
+      setColumnSettings([]);
     }
   };
 
@@ -219,16 +228,51 @@ const Monitor = () => {
   };
 
   // Function to mark an order as completed
-  const completeOrder = async (order: OrderEntry) => {
+  const completeOrder = (order: OrderEntry) => {
     try {
-      const response = await apiService.completeOrder(order.auftragsnummer);
+      // Get current orders from localStorage
+      const ordersStr = localStorage.getItem('orders');
+      if (!ordersStr) return;
       
-      if (response.success) {
-        // Reload orders after completion
-        await loadOrders();
-      } else {
-        throw new Error(response.error || 'Fehler beim Abschließen des Auftrags');
+      const orders = JSON.parse(ordersStr, (key, value) => {
+        if (key === 'zeitstempel') {
+          return new Date(value);
+        }
+        return value;
+      });
+      
+      // Remove the completed order from active orders
+      const updatedOrders = orders.filter((o: OrderEntry) => o.auftragsnummer !== order.auftragsnummer);
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      
+      // Add to completed orders with completion timestamp
+      const completedOrder: CompletedOrderEntry = {
+        ...order,
+        abschlussZeitstempel: new Date(),
+        aufenthaltsZeitInQS: calculateTimeInQS(order.zeitstempel)
+      };
+      
+      const completedOrdersStr = localStorage.getItem('completedOrders');
+      let completedOrders = [];
+      
+      if (completedOrdersStr) {
+        try {
+          completedOrders = JSON.parse(completedOrdersStr, (key, value) => {
+            if (key === 'zeitstempel' || key === 'abschlussZeitstempel') {
+              return new Date(value);
+            }
+            return value;
+          });
+        } catch (error) {
+          console.error('Error parsing completed orders:', error);
+        }
       }
+      
+      completedOrders.push(completedOrder);
+      localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+      
+      // Reload orders after completion
+      loadOrders();
     } catch (error) {
       console.error('Error completing order:', error);
       toast("Fehler beim Abschließen des Auftrags", {
