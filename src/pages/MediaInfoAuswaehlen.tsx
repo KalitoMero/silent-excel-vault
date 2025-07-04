@@ -206,7 +206,7 @@ const MediaInfoAuswaehlen = () => {
       setStream(mediaStream);
       setHasStream(true);
       
-      // Set up video preview immediately
+      // Set up video preview with event-based display
       if (videoRef.current) {
         const video = videoRef.current;
         video.srcObject = mediaStream;
@@ -216,23 +216,44 @@ const MediaInfoAuswaehlen = () => {
         video.muted = true;
         video.playsInline = true;
         
-        try {
-          await video.play();
-          console.log('Video preview started successfully');
-          
-          // Apply refresh logic to ensure immediate visibility
-          await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for video to be ready before applying refresh logic
+        const applyRefreshLogic = async () => {
+          console.log('Applying refresh logic for immediate visibility');
+          await new Promise(resolve => setTimeout(resolve, 500)); // Increased wait time
           video.srcObject = null;
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 500)); // Increased wait time
           video.srcObject = mediaStream;
           await video.play();
           console.log('Video refreshed for immediate visibility');
+        };
+        
+        // Event-based approach: wait for video to be ready
+        const onVideoReady = async () => {
+          console.log('Video metadata loaded, applying refresh logic');
+          await applyRefreshLogic();
+        };
+        
+        // Add event listeners
+        video.addEventListener('loadedmetadata', onVideoReady, { once: true });
+        
+        try {
+          await video.play();
+          console.log('Video preview started successfully');
         } catch (playError) {
           console.error('Error starting video preview:', playError);
-          // Force video to play
+          // Force video to play and apply refresh
           video.load();
           await video.play();
+          await applyRefreshLogic();
         }
+        
+        // Fallback mechanism: if video is still not visible after 2 seconds, apply refresh logic
+        setTimeout(async () => {
+          if (video.videoWidth === 0 || video.videoHeight === 0) {
+            console.log('Video still not visible after 2s, applying fallback refresh');
+            await applyRefreshLogic();
+          }
+        }, 2000);
       }
       
       // Start recording with the new stream
