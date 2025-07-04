@@ -278,8 +278,13 @@ const MediaInfoAuswaehlen = () => {
                       ref={videoRef}
                       autoPlay
                       muted
+                      playsInline
                       className="w-full max-w-md mx-auto rounded-lg border-2 border-primary"
+                      style={{ transform: 'scaleX(-1)' }}
                     />
+                    <p className="text-center text-sm text-gray-600 mt-2">
+                      Live-Vorschau der Aufnahme
+                    </p>
                   </div>
                 )}
                 
