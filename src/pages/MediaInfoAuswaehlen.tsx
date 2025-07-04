@@ -163,72 +163,47 @@ const MediaInfoAuswaehlen = () => {
 
   const startRecording = async () => {
     try {
-      // If no stream, start camera first
-      if (!stream) {
-        console.log('Starting camera for recording...');
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-          video: true, 
-          audio: true 
-        });
-        
-        setStream(mediaStream);
-        setHasStream(true);
-        
-        // Set up video preview immediately
-        if (videoRef.current) {
-          const video = videoRef.current;
-          video.srcObject = mediaStream;
-          
-          // Ensure video plays immediately
-          video.autoplay = true;
-          video.muted = true;
-          video.playsInline = true;
-          
-          try {
-            await video.play();
-            console.log('Video preview started successfully');
-          } catch (playError) {
-            console.error('Error starting video preview:', playError);
-            // Force video to play
-            video.load();
-            await video.play();
-          }
-        }
-        
-        
-        
-        // Start recording with the new stream
-        const mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorderRef.current = mediaRecorder;
-        recordedChunksRef.current = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            recordedChunksRef.current.push(event.data);
-          }
-        };
-        
-        mediaRecorder.onstop = async () => {
-          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-          const recordingInfo = `Video-Aufnahme erstellt (${new Date().toLocaleString()})`;
-          toast("Aufnahme beendet", { duration: 2000 });
-          await navigateToPrioSelection(recordingInfo, blob);
-          
-          // Cleanup
-          mediaStream.getTracks().forEach(track => track.stop());
-          setStream(null);
-          setHasStream(false);
-        };
-        
-        mediaRecorder.start();
-        setIsRecording(true);
-        toast("Aufnahme gestartet", { duration: 2000 });
-        return;
+      // Stop any existing stream first to avoid "device in use" error
+      if (stream) {
+        console.log('Stopping existing stream...');
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+        setHasStream(false);
       }
 
-      // If stream exists, start recording directly
-      console.log('Starting recording with existing stream...');
-      const mediaRecorder = new MediaRecorder(stream);
+      // Always get a fresh stream for recording
+      console.log('Starting fresh camera stream for recording...');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: true 
+      });
+      
+      setStream(mediaStream);
+      setHasStream(true);
+      
+      // Set up video preview immediately
+      if (videoRef.current) {
+        const video = videoRef.current;
+        video.srcObject = mediaStream;
+        
+        // Ensure video plays immediately
+        video.autoplay = true;
+        video.muted = true;
+        video.playsInline = true;
+        
+        try {
+          await video.play();
+          console.log('Video preview started successfully');
+        } catch (playError) {
+          console.error('Error starting video preview:', playError);
+          // Force video to play
+          video.load();
+          await video.play();
+        }
+      }
+      
+      // Start recording with the new stream
+      const mediaRecorder = new MediaRecorder(mediaStream);
       mediaRecorderRef.current = mediaRecorder;
       recordedChunksRef.current = [];
       
@@ -245,7 +220,7 @@ const MediaInfoAuswaehlen = () => {
         await navigateToPrioSelection(recordingInfo, blob);
         
         // Cleanup
-        stream.getTracks().forEach(track => track.stop());
+        mediaStream.getTracks().forEach(track => track.stop());
         setStream(null);
         setHasStream(false);
       };
@@ -258,6 +233,8 @@ const MediaInfoAuswaehlen = () => {
       console.error('Error starting recording:', error);
       if (error.name === 'NotAllowedError') {
         toast("Kamera-Zugriff verweigert. Bitte erlauben Sie den Zugriff.", { duration: 5000 });
+      } else if (error.name === 'NotReadableError') {
+        toast("Kamera ist bereits in Verwendung. Bitte versuchen Sie es erneut.", { duration: 3000 });
       } else {
         toast("Fehler beim Starten der Aufnahme", { duration: 3000 });
       }
