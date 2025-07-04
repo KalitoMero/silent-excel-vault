@@ -11,6 +11,7 @@ const PrioFinalAuswaehlen = () => {
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
   const abteilung = searchParams.get('abteilung') || '';
   const zusatzinfo = searchParams.get('zusatzinfo') || '';
+  const mediaInfo = searchParams.get('mediaInfo') || '';
 
   const handlePrioSelect = async (prio: number) => {
     if (!auftragsnummer) {
@@ -28,7 +29,9 @@ const PrioFinalAuswaehlen = () => {
         zeitstempel: new Date(),
         abteilung,
         zusatzinfo,
-        zusatzDaten: {}
+        zusatzDaten: {
+          mediaInfo: mediaInfo || null
+        }
       };
 
       // Get Excel data from localStorage to find additional information
@@ -132,7 +135,7 @@ const PrioFinalAuswaehlen = () => {
           asChild 
           className="mb-6"
         >
-          <Link to={`/abteilung-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}`} className="flex items-center">
+          <Link to={`/media-info-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=${encodeURIComponent(zusatzinfo)}`} className="flex items-center">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zurück
           </Link>

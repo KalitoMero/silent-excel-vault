@@ -45,7 +45,7 @@ const AbteilungAuswaehlen = () => {
   }, [abteilung]);
 
   const handleAdditionalInfoSelect = (additionalInfo: string) => {
-    navigate(`/prio-final-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=${encodeURIComponent(additionalInfo)}`);
+    navigate(`/media-info-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=${encodeURIComponent(additionalInfo)}`);
   };
 
   return (

@@ -13,6 +13,7 @@ import PrioAuswaehlen from "./pages/PrioAuswaehlen";
 import AbteilungAuswaehlen from "./pages/AbteilungAuswaehlen";
 
 import PrioFinalAuswaehlen from "./pages/PrioFinalAuswaehlen";
+import MediaInfoAuswaehlen from "./pages/MediaInfoAuswaehlen";
 import Monitor from "./pages/Monitor";
 import NotFound from "./pages/NotFound";
 
@@ -34,7 +35,7 @@ const App = () => (
           <Route path="/scanauftrag" element={<Home1 />} />
           <Route path="/prio-auswaehlen" element={<PrioAuswaehlen />} />
           <Route path="/abteilung-auswaehlen" element={<AbteilungAuswaehlen />} />
-          
+          <Route path="/media-info-auswaehlen" element={<MediaInfoAuswaehlen />} />
           <Route path="/prio-final-auswaehlen" element={<PrioFinalAuswaehlen />} />
           <Route path="/monitor" element={<Monitor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
