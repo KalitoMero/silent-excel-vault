@@ -98,13 +98,53 @@ const MediaInfoAuswaehlen = () => {
       });
       
       console.log('Camera access granted, setting up stream...');
+      console.log('Stream tracks:', mediaStream.getTracks().map(track => ({
+        kind: track.kind,
+        enabled: track.enabled,
+        readyState: track.readyState
+      })));
+      
       setStream(mediaStream);
       setHasStream(true);
       
-      // Show video preview immediately
+      // Show video preview immediately with debugging
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        const video = videoRef.current;
+        
+        // Add event listeners for debugging
+        video.addEventListener('loadedmetadata', () => {
+          console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
+        });
+        
+        video.addEventListener('canplay', () => {
+          console.log('Video can play');
+        });
+        
+        video.addEventListener('playing', () => {
+          console.log('Video is playing');
+        });
+        
+        video.addEventListener('error', (e) => {
+          console.error('Video error:', e);
+        });
+        
+        // Set the stream and explicitly play
+        video.srcObject = mediaStream;
         console.log('Video stream assigned to video element');
+        
+        // Explicitly play the video
+        try {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+            console.log('Video play successful');
+          }
+        } catch (playError) {
+          console.error('Error playing video:', playError);
+          // Try to recover by setting autoplay and reloading
+          video.autoplay = true;
+          video.load();
+        }
       }
       
       toast("Kamera aktiviert", { duration: 2000 });
