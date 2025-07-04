@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, CheckCircle, Trash2 } from 'lucide-react';
+import { Home, CheckCircle, Trash2, Play, FileText } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { apiService, OrderEntry } from '@/services/api';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CompletedOrderEntry extends OrderEntry {
   abschlussZeitstempel: Date;
@@ -26,6 +27,7 @@ const Monitor = () => {
   const [columnSettings, setColumnSettings] = useState<ColumnSetting[]>([]);
   const [barcodeValue, setBarcodeValue] = useState<string>('');
   const [, forceUpdate] = useState({});
+  const [orderMedia, setOrderMedia] = useState<{[key: string]: any[]}>({});
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const autoReturn = searchParams.get('autoReturn') === 'true';
@@ -50,6 +52,7 @@ const Monitor = () => {
     // Load column settings and orders from localStorage
     loadColumnSettings();
     loadOrders();
+    loadOrderMedia();
     
     // Set up an interval to update the timers every second
     const intervalId = setInterval(() => {
@@ -110,6 +113,34 @@ const Monitor = () => {
     } catch (error) {
       console.error('Error loading column settings:', error);
       setColumnSettings([]);
+    }
+  };
+
+  // Load order media from Supabase
+  const loadOrderMedia = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('order_media')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading order media:', error);
+        return;
+      }
+
+      // Group media by order number
+      const mediaByOrder: {[key: string]: any[]} = {};
+      data?.forEach(media => {
+        if (!mediaByOrder[media.auftragsnummer]) {
+          mediaByOrder[media.auftragsnummer] = [];
+        }
+        mediaByOrder[media.auftragsnummer].push(media);
+      });
+
+      setOrderMedia(mediaByOrder);
+    } catch (error) {
+      console.error('Error loading order media:', error);
     }
   };
 
@@ -384,6 +415,7 @@ const Monitor = () => {
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
+                    <TableHead>Medien</TableHead>
                     <TableHead className="w-16">Aktionen</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -402,6 +434,37 @@ const Monitor = () => {
                           {order.zusatzDaten && order.zusatzDaten[column.title]}
                         </TableCell>
                       ))}
+                      <TableCell>
+                        {orderMedia[order.auftragsnummer] && (
+                          <div className="flex gap-1">
+                            {orderMedia[order.auftragsnummer].map((media, idx) => (
+                              <Button
+                                key={idx}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (media.file_type === 'video') {
+                                    const { data } = supabase.storage.from('order-media').getPublicUrl(media.file_path);
+                                    window.open(data.publicUrl, '_blank');
+                                  } else if (media.file_type === 'text') {
+                                    toast(media.content, { duration: 5000 });
+                                  }
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                {media.file_type === 'video' ? (
+                                  <Play className="h-4 w-4" />
+                                ) : (
+                                  <FileText className="h-4 w-4" />
+                                )}
+                                <span className="sr-only">
+                                  {media.file_type === 'video' ? 'Video abspielen' : 'Text anzeigen'}
+                                </span>
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
@@ -441,6 +504,7 @@ const Monitor = () => {
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
+                    <TableHead>Medien</TableHead>
                     <TableHead className="w-16">Aktionen</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -459,6 +523,37 @@ const Monitor = () => {
                           {order.zusatzDaten && order.zusatzDaten[column.title]}
                         </TableCell>
                       ))}
+                      <TableCell>
+                        {orderMedia[order.auftragsnummer] && (
+                          <div className="flex gap-1">
+                            {orderMedia[order.auftragsnummer].map((media, idx) => (
+                              <Button
+                                key={idx}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (media.file_type === 'video') {
+                                    const { data } = supabase.storage.from('order-media').getPublicUrl(media.file_path);
+                                    window.open(data.publicUrl, '_blank');
+                                  } else if (media.file_type === 'text') {
+                                    toast(media.content, { duration: 5000 });
+                                  }
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                {media.file_type === 'video' ? (
+                                  <Play className="h-4 w-4" />
+                                ) : (
+                                  <FileText className="h-4 w-4" />
+                                )}
+                                <span className="sr-only">
+                                  {media.file_type === 'video' ? 'Video abspielen' : 'Text anzeigen'}
+                                </span>
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"

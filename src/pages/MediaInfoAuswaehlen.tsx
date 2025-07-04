@@ -2,9 +2,10 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Home, Mic, Type } from 'lucide-react';
+import { ArrowLeft, Home, Mic, Type, Camera } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useState, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 const MediaInfoAuswaehlen = () => {
   const [searchParams] = useSearchParams();
@@ -16,10 +17,64 @@ const MediaInfoAuswaehlen = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textNote, setTextNote] = useState('');
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const navigateToPrioSelection = (mediaInfo?: string) => {
+  const navigateToPrioSelection = async (mediaInfo?: string, mediaFile?: Blob) => {
+    let fileUrl = '';
+    
+    if (mediaFile) {
+      try {
+        // Generate unique filename
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const fileName = `${auftragsnummer}_${timestamp}.webm`;
+        
+        // Upload to Supabase storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('order-media')
+          .upload(fileName, mediaFile, {
+            contentType: 'video/webm'
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast("Fehler beim Speichern der Aufnahme", { duration: 3000 });
+        } else {
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('order-media')
+            .getPublicUrl(fileName);
+          
+          fileUrl = urlData.publicUrl;
+          
+          // Save media info to database
+          await supabase.from('order_media').insert({
+            auftragsnummer,
+            file_path: fileName,
+            file_type: 'video',
+            content: mediaInfo || 'Video-Aufnahme'
+          });
+        }
+      } catch (error) {
+        console.error('Error saving media:', error);
+        toast("Fehler beim Speichern", { duration: 3000 });
+      }
+    } else if (mediaInfo && textNote) {
+      try {
+        // Save text note to database
+        await supabase.from('order_media').insert({
+          auftragsnummer,
+          file_path: '',
+          file_type: 'text',
+          content: textNote
+        });
+      } catch (error) {
+        console.error('Error saving text note:', error);
+      }
+    }
+    
     const params = new URLSearchParams({
       auftragsnummer,
       abteilung,
@@ -35,12 +90,19 @@ const MediaInfoAuswaehlen = () => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
         audio: true 
       });
       
-      const mediaRecorder = new MediaRecorder(stream);
+      setStream(mediaStream);
+      
+      // Show video preview
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      
+      const mediaRecorder = new MediaRecorder(mediaStream);
       mediaRecorderRef.current = mediaRecorder;
       recordedChunksRef.current = [];
       
@@ -50,17 +112,17 @@ const MediaInfoAuswaehlen = () => {
         }
       };
       
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
         
         // Store recording info and navigate
         const recordingInfo = `Video-Aufnahme erstellt (${new Date().toLocaleString()})`;
         toast("Aufnahme beendet", { duration: 2000 });
-        navigateToPrioSelection(recordingInfo);
+        await navigateToPrioSelection(recordingInfo, blob);
         
         // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
+        mediaStream.getTracks().forEach(track => track.stop());
+        setStream(null);
       };
       
       mediaRecorder.start();
@@ -80,16 +142,16 @@ const MediaInfoAuswaehlen = () => {
     }
   };
 
-  const handleTextSave = () => {
+  const handleTextSave = async () => {
     if (textNote.trim()) {
-      navigateToPrioSelection(textNote);
+      await navigateToPrioSelection(textNote);
     } else {
       toast("Bitte geben Sie eine Notiz ein", { duration: 2000 });
     }
   };
 
-  const handleSkip = () => {
-    navigateToPrioSelection();
+  const handleSkip = async () => {
+    await navigateToPrioSelection();
   };
 
   if (showTextInput) {
@@ -210,6 +272,17 @@ const MediaInfoAuswaehlen = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Möchten Sie zusätzliche Informationen hinzufügen?</h3>
                 
+                {isRecording && (
+                  <div className="mb-4">
+                    <video 
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      className="w-full max-w-md mx-auto rounded-lg border-2 border-primary"
+                    />
+                  </div>
+                )}
+                
                 <div className="flex flex-col gap-4">
                   <Button 
                     onClick={isRecording ? stopRecording : startRecording}
@@ -217,8 +290,8 @@ const MediaInfoAuswaehlen = () => {
                     className="h-auto p-6 text-xl"
                     variant={isRecording ? "destructive" : "default"}
                   >
-                    <Mic className="mr-3 h-6 w-6" />
-                    {isRecording ? "Aufnahme beenden" : "Video-/Audio-Aufnahme starten"}
+                    <Camera className="mr-3 h-6 w-6" />
+                    {isRecording ? "Aufnahme beenden" : "Video-Aufnahme starten"}
                   </Button>
                   
                   <Button 
@@ -226,6 +299,7 @@ const MediaInfoAuswaehlen = () => {
                     variant="outline"
                     size="lg" 
                     className="h-auto p-6 text-xl"
+                    disabled={isRecording}
                   >
                     <Type className="mr-3 h-6 w-6" />
                     Text-Notiz hinzufügen
@@ -236,6 +310,7 @@ const MediaInfoAuswaehlen = () => {
                     variant="secondary"
                     size="lg" 
                     className="h-auto p-6 text-xl"
+                    disabled={isRecording}
                   >
                     Ohne Info weiter
                   </Button>
