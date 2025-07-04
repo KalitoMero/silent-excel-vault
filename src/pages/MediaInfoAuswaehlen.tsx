@@ -147,7 +147,7 @@ const MediaInfoAuswaehlen = () => {
         }
       }
       
-      toast("Kamera aktiviert", { duration: 2000 });
+      
       
     } catch (error) {
       console.error('Error accessing camera:', error);
