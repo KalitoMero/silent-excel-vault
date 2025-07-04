@@ -162,30 +162,57 @@ const MediaInfoAuswaehlen = () => {
   };
 
   const startRecording = async () => {
-    if (!stream) {
-      await startCamera();
-      // Wait a bit for camera to initialize, then start recording
-      setTimeout(() => {
-        if (!isRecording) {
-          startRecording();
-        }
-      }, 1000);
-      return;
-    }
-
-    // Ensure video is playing before starting recording
-    if (videoRef.current && stream) {
-      try {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        console.log('Video started before recording');
-      } catch (error) {
-        console.error('Could not start video before recording:', error);
-      }
-    }
-
     try {
-      console.log('Starting recording...');
+      // If no stream, start camera first
+      if (!stream) {
+        console.log('Starting camera for recording...');
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: true 
+        });
+        
+        setStream(mediaStream);
+        setHasStream(true);
+        
+        // Set up video preview
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          await videoRef.current.play();
+        }
+        
+        toast("Kamera aktiviert - Aufnahme startet...", { duration: 2000 });
+        
+        // Start recording with the new stream
+        const mediaRecorder = new MediaRecorder(mediaStream);
+        mediaRecorderRef.current = mediaRecorder;
+        recordedChunksRef.current = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunksRef.current.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+          const recordingInfo = `Video-Aufnahme erstellt (${new Date().toLocaleString()})`;
+          toast("Aufnahme beendet", { duration: 2000 });
+          await navigateToPrioSelection(recordingInfo, blob);
+          
+          // Cleanup
+          mediaStream.getTracks().forEach(track => track.stop());
+          setStream(null);
+          setHasStream(false);
+        };
+        
+        mediaRecorder.start();
+        setIsRecording(true);
+        toast("Aufnahme gestartet", { duration: 2000 });
+        return;
+      }
+
+      // If stream exists, start recording directly
+      console.log('Starting recording with existing stream...');
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       recordedChunksRef.current = [];
@@ -198,14 +225,12 @@ const MediaInfoAuswaehlen = () => {
       
       mediaRecorder.onstop = async () => {
         const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-        
-        // Store recording info and navigate
         const recordingInfo = `Video-Aufnahme erstellt (${new Date().toLocaleString()})`;
         toast("Aufnahme beendet", { duration: 2000 });
         await navigateToPrioSelection(recordingInfo, blob);
         
-        // Stop all tracks and cleanup
-        stream?.getTracks().forEach(track => track.stop());
+        // Cleanup
+        stream.getTracks().forEach(track => track.stop());
         setStream(null);
         setHasStream(false);
       };
@@ -216,7 +241,11 @@ const MediaInfoAuswaehlen = () => {
       
     } catch (error) {
       console.error('Error starting recording:', error);
-      toast("Fehler beim Starten der Aufnahme", { duration: 3000 });
+      if (error.name === 'NotAllowedError') {
+        toast("Kamera-Zugriff verweigert. Bitte erlauben Sie den Zugriff.", { duration: 5000 });
+      } else {
+        toast("Fehler beim Starten der Aufnahme", { duration: 3000 });
+      }
     }
   };
 
@@ -408,19 +437,6 @@ const MediaInfoAuswaehlen = () => {
                   </div>
                 )}
                 
-                {!hasStream && !isRecording && (
-                  <div className="mb-4">
-                    <Button 
-                      onClick={startCamera}
-                      variant="outline"
-                      size="lg" 
-                      className="h-auto p-6 text-xl w-full"
-                    >
-                      <Camera className="mr-3 h-6 w-6" />
-                      Kamera aktivieren
-                    </Button>
-                  </div>
-                )}
                 
                 <div className="flex flex-col gap-4">
                   <Button 
