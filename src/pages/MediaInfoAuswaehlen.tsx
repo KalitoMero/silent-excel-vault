@@ -18,6 +18,7 @@ const MediaInfoAuswaehlen = () => {
   const [showTextInput, setShowTextInput] = useState(false);
   const [textNote, setTextNote] = useState('');
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [hasStream, setHasStream] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -88,21 +89,47 @@ const MediaInfoAuswaehlen = () => {
     navigate(`/prio-final-auswaehlen?${params.toString()}`);
   };
 
-  const startRecording = async () => {
+  const startCamera = async () => {
     try {
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({ 
         video: true, 
         audio: true 
       });
       
+      console.log('Camera access granted, setting up stream...');
       setStream(mediaStream);
+      setHasStream(true);
       
-      // Show video preview
+      // Show video preview immediately
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        console.log('Video stream assigned to video element');
       }
       
-      const mediaRecorder = new MediaRecorder(mediaStream);
+      toast("Kamera aktiviert", { duration: 2000 });
+      
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      if (error.name === 'NotAllowedError') {
+        toast("Kamera-Zugriff verweigert. Bitte erlauben Sie den Zugriff.", { duration: 5000 });
+      } else if (error.name === 'NotFoundError') {
+        toast("Keine Kamera gefunden", { duration: 3000 });
+      } else {
+        toast("Fehler beim Zugriff auf die Kamera", { duration: 3000 });
+      }
+    }
+  };
+
+  const startRecording = async () => {
+    if (!stream) {
+      await startCamera();
+      return;
+    }
+
+    try {
+      console.log('Starting recording...');
+      const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       recordedChunksRef.current = [];
       
@@ -120,9 +147,10 @@ const MediaInfoAuswaehlen = () => {
         toast("Aufnahme beendet", { duration: 2000 });
         await navigateToPrioSelection(recordingInfo, blob);
         
-        // Stop all tracks
-        mediaStream.getTracks().forEach(track => track.stop());
+        // Stop all tracks and cleanup
+        stream?.getTracks().forEach(track => track.stop());
         setStream(null);
+        setHasStream(false);
       };
       
       mediaRecorder.start();
@@ -272,7 +300,7 @@ const MediaInfoAuswaehlen = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Möchten Sie zusätzliche Informationen hinzufügen?</h3>
                 
-                {isRecording && (
+                {hasStream && (
                   <div className="mb-4">
                     <video 
                       ref={videoRef}
@@ -283,8 +311,22 @@ const MediaInfoAuswaehlen = () => {
                       style={{ transform: 'scaleX(-1)' }}
                     />
                     <p className="text-center text-sm text-gray-600 mt-2">
-                      Live-Vorschau der Aufnahme
+                      {isRecording ? "Aufnahme läuft..." : "Live-Vorschau (bereit zur Aufnahme)"}
                     </p>
+                  </div>
+                )}
+                
+                {!hasStream && !isRecording && (
+                  <div className="mb-4">
+                    <Button 
+                      onClick={startCamera}
+                      variant="outline"
+                      size="lg" 
+                      className="h-auto p-6 text-xl w-full"
+                    >
+                      <Camera className="mr-3 h-6 w-6" />
+                      Kamera aktivieren
+                    </Button>
                   </div>
                 )}
                 
