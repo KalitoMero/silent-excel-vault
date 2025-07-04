@@ -10,6 +10,8 @@ import Einstellungen from "./pages/Einstellungen";
 import Home1 from "./pages/Home1";
 import Home2 from "./pages/Home2";
 import PrioAuswaehlen from "./pages/PrioAuswaehlen";
+import AbteilungAuswaehlen from "./pages/AbteilungAuswaehlen";
+import ZusatzinfoAuswaehlen from "./pages/ZusatzinfoAuswaehlen";
 import Monitor from "./pages/Monitor";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +32,8 @@ const App = () => (
           <Route path="/home2" element={<Home2 />} />
           <Route path="/scanauftrag" element={<Home1 />} />
           <Route path="/prio-auswaehlen" element={<PrioAuswaehlen />} />
+          <Route path="/abteilung-auswaehlen" element={<AbteilungAuswaehlen />} />
+          <Route path="/zusatzinfo-auswaehlen" element={<ZusatzinfoAuswaehlen />} />
           <Route path="/monitor" element={<Monitor />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

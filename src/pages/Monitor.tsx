@@ -320,6 +320,8 @@ const Monitor = () => {
                     <TableHead>Auftragsnummer</TableHead>
                     <TableHead>Zeitstempel</TableHead>
                     <TableHead>Aufenthalt in QS</TableHead>
+                    <TableHead>Abteilung</TableHead>
+                    <TableHead>Zusatzinfo</TableHead>
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
@@ -333,6 +335,8 @@ const Monitor = () => {
                       <TableCell className="font-medium text-amber-600">
                         {calculateTimeInQS(order.zeitstempel)}
                       </TableCell>
+                      <TableCell>{order.abteilung || '-'}</TableCell>
+                      <TableCell>{order.zusatzinfo || '-'}</TableCell>
                       {columnSettings.map((column) => (
                         <TableCell key={`${order.auftragsnummer}-${column.id}`}>
                           {order.zusatzDaten && order.zusatzDaten[column.title]}
@@ -361,6 +365,8 @@ const Monitor = () => {
                     <TableHead>Auftragsnummer</TableHead>
                     <TableHead>Zeitstempel</TableHead>
                     <TableHead>Aufenthalt in QS</TableHead>
+                    <TableHead>Abteilung</TableHead>
+                    <TableHead>Zusatzinfo</TableHead>
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
@@ -374,6 +380,8 @@ const Monitor = () => {
                       <TableCell className="font-medium text-gray-600">
                         {calculateTimeInQS(order.zeitstempel)}
                       </TableCell>
+                      <TableCell>{order.abteilung || '-'}</TableCell>
+                      <TableCell>{order.zusatzinfo || '-'}</TableCell>
                       {columnSettings.map((column) => (
                         <TableCell key={`${order.auftragsnummer}-${column.id}`}>
                           {order.zusatzDaten && order.zusatzDaten[column.title]}

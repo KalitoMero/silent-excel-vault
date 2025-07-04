@@ -5,6 +5,8 @@ export interface OrderEntry {
   auftragsnummer: string;
   prioritaet: 1 | 2;
   zeitstempel: Date;
+  abteilung?: string;
+  zusatzinfo?: string;
   zusatzDaten: Record<string, any>;
 }
 

@@ -15,6 +15,7 @@ import { Plus, Save, Home, Download, FileText } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import * as XLSX from 'xlsx';
+import SelectionSettings from '@/components/SelectionSettings';
 
 interface ColumnSetting {
   id: string;
@@ -263,6 +264,7 @@ const Einstellungen = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="excel">Excel-Einstellungen</TabsTrigger>
             <TabsTrigger value="columns">Spalteneinstellungen</TabsTrigger>
+            <TabsTrigger value="selections">Auswahlmöglichkeiten</TabsTrigger>
             <TabsTrigger value="archive">Archivierte Aufträge</TabsTrigger>
           </TabsList>
           
@@ -399,6 +401,10 @@ const Einstellungen = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="selections">
+            <SelectionSettings />
           </TabsContent>
 
           <TabsContent value="archive">
