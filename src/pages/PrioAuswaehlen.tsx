@@ -31,7 +31,7 @@ const PrioAuswaehlen = () => {
   }, []);
 
   const handleDepartmentSelect = (departmentName: string) => {
-    navigate(`/zusatzinfo-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(departmentName)}`);
+    navigate(`/abteilung-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(departmentName)}`);
   };
 
   const handlePrioSelect = (prio: number) => {
