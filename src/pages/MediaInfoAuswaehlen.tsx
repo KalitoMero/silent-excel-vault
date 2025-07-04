@@ -174,10 +174,25 @@ const MediaInfoAuswaehlen = () => {
         setStream(mediaStream);
         setHasStream(true);
         
-        // Set up video preview
+        // Set up video preview immediately
         if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          await videoRef.current.play();
+          const video = videoRef.current;
+          video.srcObject = mediaStream;
+          
+          // Ensure video plays immediately
+          video.autoplay = true;
+          video.muted = true;
+          video.playsInline = true;
+          
+          try {
+            await video.play();
+            console.log('Video preview started successfully');
+          } catch (playError) {
+            console.error('Error starting video preview:', playError);
+            // Force video to play
+            video.load();
+            await video.play();
+          }
         }
         
         
