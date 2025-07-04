@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, CheckCircle } from 'lucide-react';
+import { Home, CheckCircle, Trash2 } from 'lucide-react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -282,6 +282,64 @@ const Monitor = () => {
     }
   };
 
+  // Function to delete an order (mark as canceled)
+  const deleteOrder = (order: OrderEntry) => {
+    try {
+      // Get current orders from localStorage
+      const ordersStr = localStorage.getItem('orders');
+      if (!ordersStr) return;
+      
+      const orders = JSON.parse(ordersStr, (key, value) => {
+        if (key === 'zeitstempel') {
+          return new Date(value);
+        }
+        return value;
+      });
+      
+      // Remove the order from active orders
+      const updatedOrders = orders.filter((o: OrderEntry) => o.auftragsnummer !== order.auftragsnummer);
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      
+      // Add to completed orders with "abgebrochen" status
+      const canceledOrder: CompletedOrderEntry = {
+        ...order,
+        abschlussZeitstempel: new Date(),
+        aufenthaltsZeitInQS: "abgebrochen"
+      };
+      
+      const completedOrdersStr = localStorage.getItem('completedOrders');
+      let completedOrders = [];
+      
+      if (completedOrdersStr) {
+        try {
+          completedOrders = JSON.parse(completedOrdersStr, (key, value) => {
+            if (key === 'zeitstempel' || key === 'abschlussZeitstempel') {
+              return new Date(value);
+            }
+            return value;
+          });
+        } catch (error) {
+          console.error('Error parsing completed orders:', error);
+        }
+      }
+      
+      completedOrders.push(canceledOrder);
+      localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
+      
+      // Reload orders after deletion
+      loadOrders();
+      
+      toast(`Auftrag ${order.auftragsnummer} wurde gelöscht`, {
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast("Fehler beim Löschen des Auftrags", {
+        duration: 3000,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <Button 
@@ -326,6 +384,7 @@ const Monitor = () => {
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
+                    <TableHead className="w-16">Aktionen</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -343,6 +402,17 @@ const Monitor = () => {
                           {order.zusatzDaten && order.zusatzDaten[column.title]}
                         </TableCell>
                       ))}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteOrder(order)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Auftrag löschen</span>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -371,6 +441,7 @@ const Monitor = () => {
                     {columnSettings.map((column) => (
                       <TableHead key={column.id}>{column.title}</TableHead>
                     ))}
+                    <TableHead className="w-16">Aktionen</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -388,6 +459,17 @@ const Monitor = () => {
                           {order.zusatzDaten && order.zusatzDaten[column.title]}
                         </TableCell>
                       ))}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteOrder(order)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Auftrag löschen</span>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
