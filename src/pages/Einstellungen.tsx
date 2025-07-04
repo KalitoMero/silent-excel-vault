@@ -60,15 +60,22 @@ const Einstellungen = () => {
   };
 
   const calculateAverageTime = (orders: CompletedOrderEntry[]) => {
+    // Filter out canceled orders (those with "abgebrochen" status)
+    const validOrders = orders.filter(order => order.aufenthaltsZeitInQS !== "abgebrochen");
+    
+    if (validOrders.length === 0) {
+      return "Keine Daten";
+    }
+    
     let totalMilliseconds = 0;
     
-    orders.forEach(order => {
+    validOrders.forEach(order => {
       const startTime = order.zeitstempel.getTime();
       const endTime = order.abschlussZeitstempel.getTime();
       totalMilliseconds += (endTime - startTime);
     });
     
-    const averageMs = totalMilliseconds / orders.length;
+    const averageMs = totalMilliseconds / validOrders.length;
     
     // Convert average milliseconds to formatted string
     return formatTimeFromMs(averageMs);
@@ -123,8 +130,13 @@ const Einstellungen = () => {
       };
     }
 
-    const prio1Orders = completedOrders.filter(order => order.prioritaet === 1);
-    const prio2Orders = completedOrders.filter(order => order.prioritaet === 2);
+    // Filter out canceled orders for statistics calculation
+    const prio1Orders = completedOrders.filter(order => 
+      order.prioritaet === 1 && order.aufenthaltsZeitInQS !== "abgebrochen"
+    );
+    const prio2Orders = completedOrders.filter(order => 
+      order.prioritaet === 2 && order.aufenthaltsZeitInQS !== "abgebrochen"
+    );
 
     // Calculate average time for Prio 1
     const averagePrio1 = prio1Orders.length > 0
