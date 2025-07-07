@@ -488,7 +488,7 @@ const MediaInfoAuswaehlen = () => {
                   <Button 
                     onClick={isRecording ? stopRecording : startRecording}
                     size="lg" 
-                    className="h-auto p-6 text-xl"
+                    className={`h-auto p-6 text-xl ${isRecording ? 'animate-pulse' : ''}`}
                     variant={isRecording ? "destructive" : "default"}
                   >
                     <Camera className="mr-3 h-6 w-6" />
