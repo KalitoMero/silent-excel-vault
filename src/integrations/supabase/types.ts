@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      additional_infos: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "additional_infos_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      column_settings: {
+        Row: {
+          column_number: number
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          column_number: number
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          column_number?: number
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      excel_data: {
+        Row: {
+          created_at: string
+          data: Json
+          filename: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          filename: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          filename?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      excel_settings: {
+        Row: {
+          auftragsnummer_column: number
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          auftragsnummer_column: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          auftragsnummer_column?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_media: {
         Row: {
           auftragsnummer: string
@@ -38,6 +157,45 @@ export type Database = {
           file_path?: string
           file_type?: string
           id?: string
+        }
+        Relationships: []
+      }
+      scan_orders: {
+        Row: {
+          abteilung: string | null
+          auftragsnummer: string
+          completed: boolean | null
+          created_at: string
+          id: string
+          prioritaet: number
+          updated_at: string
+          zeitstempel: string
+          zusatz_daten: Json | null
+          zusatzinfo: string | null
+        }
+        Insert: {
+          abteilung?: string | null
+          auftragsnummer: string
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          prioritaet: number
+          updated_at?: string
+          zeitstempel: string
+          zusatz_daten?: Json | null
+          zusatzinfo?: string | null
+        }
+        Update: {
+          abteilung?: string | null
+          auftragsnummer?: string
+          completed?: boolean | null
+          created_at?: string
+          id?: string
+          prioritaet?: number
+          updated_at?: string
+          zeitstempel?: string
+          zusatz_daten?: Json | null
+          zusatzinfo?: string | null
         }
         Relationships: []
       }

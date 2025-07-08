@@ -10,8 +10,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Plus, Save, Trash } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
+import { Plus, Trash, Loader2 } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 import {
   Select,
   SelectContent,
@@ -19,141 +19,151 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { apiService, Department, AdditionalInfo } from '@/services/api';
 
-interface Department {
-  id: string;
-  name: string;
-}
-
-interface AdditionalInfo {
-  id: string;
-  name: string;
-  departmentId: string;
-}
-
-const SelectionSettings = () => {
-  const { toast } = useToast();
+const SelectionSettingsNew = () => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [additionalInfos, setAdditionalInfos] = useState<AdditionalInfo[]>([]);
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [newAdditionalInfoName, setNewAdditionalInfoName] = useState('');
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Load departments from localStorage
-    const savedDepartments = localStorage.getItem('departments');
-    if (savedDepartments) {
-      try {
-        setDepartments(JSON.parse(savedDepartments));
-      } catch (error) {
-        console.error('Error loading departments:', error);
-      }
-    }
-
-    // Load additional infos from localStorage
-    const savedAdditionalInfos = localStorage.getItem('additionalInfos');
-    if (savedAdditionalInfos) {
-      try {
-        setAdditionalInfos(JSON.parse(savedAdditionalInfos));
-      } catch (error) {
-        console.error('Error loading additional infos:', error);
-      }
-    }
+    loadData();
   }, []);
 
-  const addDepartment = () => {
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [departmentsResult, additionalInfosResult] = await Promise.all([
+        apiService.getDepartments(),
+        apiService.getAdditionalInfos()
+      ]);
+
+      if (departmentsResult.success && departmentsResult.departments) {
+        setDepartments(departmentsResult.departments);
+      }
+
+      if (additionalInfosResult.success && additionalInfosResult.additionalInfos) {
+        setAdditionalInfos(additionalInfosResult.additionalInfos);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast("Fehler beim Laden der Daten", { duration: 3000 });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addDepartment = async () => {
     if (!newDepartmentName.trim()) {
-      toast({
-        title: "Ungültige Eingabe",
-        description: "Bitte geben Sie einen Abteilungsnamen ein.",
-        variant: "destructive"
-      });
+      toast("Bitte geben Sie einen Abteilungsnamen ein.", { duration: 2000 });
       return;
     }
 
-    const newDepartment: Department = {
-      id: Date.now().toString(),
-      name: newDepartmentName.trim()
-    };
-
-    const updatedDepartments = [...departments, newDepartment];
-    setDepartments(updatedDepartments);
-    localStorage.setItem('departments', JSON.stringify(updatedDepartments));
-    setNewDepartmentName('');
-
-    toast({
-      title: "Abteilung hinzugefügt",
-      description: `"${newDepartment.name}" wurde erfolgreich hinzugefügt.`
-    });
+    setSubmitting(true);
+    try {
+      const result = await apiService.createDepartment(newDepartmentName.trim());
+      
+      if (result.success && result.department) {
+        setDepartments([...departments, result.department]);
+        setNewDepartmentName('');
+        toast(`"${result.department.name}" wurde erfolgreich hinzugefügt.`, { duration: 2000 });
+      } else {
+        toast(result.error || "Fehler beim Hinzufügen der Abteilung", { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error adding department:', error);
+      toast("Fehler beim Hinzufügen der Abteilung", { duration: 3000 });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const removeDepartment = (departmentId: string) => {
-    const updatedDepartments = departments.filter(dept => dept.id !== departmentId);
-    setDepartments(updatedDepartments);
-    localStorage.setItem('departments', JSON.stringify(updatedDepartments));
-
-    // Remove all additional infos associated with this department
-    const updatedAdditionalInfos = additionalInfos.filter(info => info.departmentId !== departmentId);
-    setAdditionalInfos(updatedAdditionalInfos);
-    localStorage.setItem('additionalInfos', JSON.stringify(updatedAdditionalInfos));
-
-    toast({
-      title: "Abteilung entfernt",
-      description: "Die Abteilung und alle zugehörigen Erstteilinformationen wurden entfernt."
-    });
+  const removeDepartment = async (departmentId: string) => {
+    setSubmitting(true);
+    try {
+      const result = await apiService.deleteDepartment(departmentId);
+      
+      if (result.success) {
+        setDepartments(departments.filter(dept => dept.id !== departmentId));
+        setAdditionalInfos(additionalInfos.filter(info => info.department_id !== departmentId));
+        toast("Die Abteilung und alle zugehörigen Erstteilinformationen wurden entfernt.", { duration: 2000 });
+      } else {
+        toast(result.error || "Fehler beim Entfernen der Abteilung", { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error removing department:', error);
+      toast("Fehler beim Entfernen der Abteilung", { duration: 3000 });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const addAdditionalInfo = () => {
+  const addAdditionalInfo = async () => {
     if (!newAdditionalInfoName.trim()) {
-      toast({
-        title: "Ungültige Eingabe",
-        description: "Bitte geben Sie einen Namen für die Erstteilinformation ein.",
-        variant: "destructive"
-      });
+      toast("Bitte geben Sie einen Namen für die Erstteilinformation ein.", { duration: 2000 });
       return;
     }
 
     if (!selectedDepartmentId) {
-      toast({
-        title: "Keine Abteilung ausgewählt",
-        description: "Bitte wählen Sie eine Abteilung aus.",
-        variant: "destructive"
-      });
+      toast("Bitte wählen Sie eine Abteilung aus.", { duration: 2000 });
       return;
     }
 
-    const newAdditionalInfo: AdditionalInfo = {
-      id: Date.now().toString(),
-      name: newAdditionalInfoName.trim(),
-      departmentId: selectedDepartmentId
-    };
-
-    const updatedAdditionalInfos = [...additionalInfos, newAdditionalInfo];
-    setAdditionalInfos(updatedAdditionalInfos);
-    localStorage.setItem('additionalInfos', JSON.stringify(updatedAdditionalInfos));
-    setNewAdditionalInfoName('');
-
-    toast({
-      title: "Erstteilinformation hinzugefügt",
-      description: `"${newAdditionalInfo.name}" wurde erfolgreich hinzugefügt.`
-    });
+    setSubmitting(true);
+    try {
+      const result = await apiService.createAdditionalInfo(newAdditionalInfoName.trim(), selectedDepartmentId);
+      
+      if (result.success && result.additionalInfo) {
+        setAdditionalInfos([...additionalInfos, result.additionalInfo]);
+        setNewAdditionalInfoName('');
+        toast(`"${result.additionalInfo.name}" wurde erfolgreich hinzugefügt.`, { duration: 2000 });
+      } else {
+        toast(result.error || "Fehler beim Hinzufügen der Erstteilinformation", { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error adding additional info:', error);
+      toast("Fehler beim Hinzufügen der Erstteilinformation", { duration: 3000 });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const removeAdditionalInfo = (infoId: string) => {
-    const updatedAdditionalInfos = additionalInfos.filter(info => info.id !== infoId);
-    setAdditionalInfos(updatedAdditionalInfos);
-    localStorage.setItem('additionalInfos', JSON.stringify(updatedAdditionalInfos));
-
-    toast({
-      title: "Erstteilinformation entfernt",
-      description: "Die Erstteilinformation wurde erfolgreich entfernt."
-    });
+  const removeAdditionalInfo = async (infoId: string) => {
+    setSubmitting(true);
+    try {
+      const result = await apiService.deleteAdditionalInfo(infoId);
+      
+      if (result.success) {
+        setAdditionalInfos(additionalInfos.filter(info => info.id !== infoId));
+        toast("Die Erstteilinformation wurde erfolgreich entfernt.", { duration: 2000 });
+      } else {
+        toast(result.error || "Fehler beim Entfernen der Erstteilinformation", { duration: 3000 });
+      }
+    } catch (error) {
+      console.error('Error removing additional info:', error);
+      toast("Fehler beim Entfernen der Erstteilinformation", { duration: 3000 });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const getDepartmentName = (departmentId: string) => {
     const department = departments.find(dept => dept.id === departmentId);
     return department ? department.name : 'Unbekannt';
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Laden...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -170,11 +180,20 @@ const SelectionSettings = () => {
                 placeholder="Neue Abteilung (z.B. Fräsen, Drehen)"
                 value={newDepartmentName}
                 onChange={(e) => setNewDepartmentName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addDepartment()}
+                onKeyDown={(e) => e.key === 'Enter' && !submitting && addDepartment()}
                 className="flex-1"
+                disabled={submitting}
               />
-              <Button onClick={addDepartment} className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="mr-2 h-4 w-4" />
+              <Button 
+                onClick={addDepartment} 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
                 Hinzufügen
               </Button>
             </div>
@@ -197,6 +216,7 @@ const SelectionSettings = () => {
                             variant="destructive"
                             size="sm"
                             onClick={() => removeDepartment(department.id)}
+                            disabled={submitting}
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
@@ -243,15 +263,20 @@ const SelectionSettings = () => {
                 placeholder="Neue Erstteilinformation (z.B. Maschine 3)"
                 value={newAdditionalInfoName}
                 onChange={(e) => setNewAdditionalInfoName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addAdditionalInfo()}
+                onKeyDown={(e) => e.key === 'Enter' && !submitting && addAdditionalInfo()}
+                disabled={submitting}
               />
               
               <Button 
                 onClick={addAdditionalInfo} 
                 className="bg-blue-600 hover:bg-blue-700"
-                disabled={departments.length === 0}
+                disabled={departments.length === 0 || submitting}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                {submitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
                 Hinzufügen
               </Button>
             </div>
@@ -276,12 +301,13 @@ const SelectionSettings = () => {
                     additionalInfos.map((info) => (
                       <TableRow key={info.id}>
                         <TableCell className="font-medium">{info.name}</TableCell>
-                        <TableCell>{getDepartmentName(info.departmentId)}</TableCell>
+                        <TableCell>{getDepartmentName(info.department_id)}</TableCell>
                         <TableCell>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => removeAdditionalInfo(info.id)}
+                            disabled={submitting}
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
@@ -305,4 +331,4 @@ const SelectionSettings = () => {
   );
 };
 
-export default SelectionSettings;
+export default SelectionSettingsNew;

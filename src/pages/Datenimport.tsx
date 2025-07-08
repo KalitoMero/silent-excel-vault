@@ -4,14 +4,15 @@ import { Link } from 'react-router-dom';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/sonner';
 import * as XLSX from 'xlsx';
+import { apiService } from '@/services/api';
 
 const Datenimport = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const { toast } = useToast();
+  
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -42,10 +43,8 @@ const Datenimport = () => {
     if (excelFile) {
       handleFileUpload(excelFile);
     } else {
-      toast({
-        title: "Ungültiger Dateityp",
-        description: "Bitte laden Sie nur Excel-Dateien (.xlsx oder .xls) hoch.",
-        variant: "destructive",
+      toast("Ungültiger Dateityp: Bitte laden Sie nur Excel-Dateien (.xlsx oder .xls) hoch.", {
+        duration: 3000,
       });
     }
   };
@@ -64,7 +63,7 @@ const Datenimport = () => {
     try {
       // Process Excel file
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = e.target?.result;
           const workbook = XLSX.read(data, { type: 'binary' });
@@ -72,33 +71,31 @@ const Datenimport = () => {
           const sheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
           
-          // Store processed data in localStorage
-          localStorage.setItem('excelData', JSON.stringify(jsonData));
+          // Save to database using API
+          const result = await apiService.importExcelData(file.name, jsonData as any[][]);
           
-          console.log('Datei wird verarbeitet:', file.name);
-          
-          setUploadStatus('success');
-          toast({
-            title: "Upload erfolgreich",
-            description: `Die Datei "${file.name}" wurde erfolgreich hochgeladen und verarbeitet.`,
-          });
+          if (result.success) {
+            console.log('Datei wurde erfolgreich verarbeitet:', file.name);
+            setUploadStatus('success');
+            toast(`Die Datei "${file.name}" wurde erfolgreich hochgeladen und verarbeitet.`, {
+              duration: 3000,
+            });
+          } else {
+            throw new Error(result.error || 'Fehler beim Speichern der Daten');
+          }
         } catch (error) {
           console.error('Verarbeitungsfehler:', error);
           setUploadStatus('error');
-          toast({
-            title: "Verarbeitungsfehler",
-            description: "Beim Verarbeiten der Excel-Datei ist ein Fehler aufgetreten.",
-            variant: "destructive",
+          toast("Beim Verarbeiten der Excel-Datei ist ein Fehler aufgetreten.", {
+            duration: 3000,
           });
         }
       };
       
       reader.onerror = () => {
         setUploadStatus('error');
-        toast({
-          title: "Lesefehler",
-          description: "Die Datei konnte nicht gelesen werden.",
-          variant: "destructive",
+        toast("Die Datei konnte nicht gelesen werden.", {
+          duration: 3000,
         });
       };
       
@@ -106,10 +103,8 @@ const Datenimport = () => {
     } catch (error) {
       setUploadStatus('error');
       console.error('Upload-Fehler:', error);
-      toast({
-        title: "Upload fehlgeschlagen",
-        description: "Beim Hochladen der Datei ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
-        variant: "destructive",
+      toast("Beim Hochladen der Datei ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.", {
+        duration: 3000,
       });
     }
   };

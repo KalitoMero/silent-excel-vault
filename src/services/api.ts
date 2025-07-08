@@ -16,6 +16,36 @@ export interface ExcelData {
   created_at: string;
 }
 
+export interface Department {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdditionalInfo {
+  id: string;
+  name: string;
+  department_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ColumnSetting {
+  id: string;
+  title: string;
+  column_number: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExcelSettings {
+  id: string;
+  auftragsnummer_column: number;
+  created_at: string;
+  updated_at: string;
+}
+
 class ApiService {
   private async fetchWithErrorHandling(url: string, options?: RequestInit) {
     try {
@@ -181,6 +211,85 @@ class ApiService {
       return await this.fetchWithErrorHandling(`${API_BASE_URL}/media/${encodeURIComponent(auftragsnummer)}`);
     } catch (error) {
       console.error('Get media by auftragsnummer failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // Department methods
+  async getDepartments(): Promise<{ success: boolean; departments?: Department[]; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/departments`);
+    } catch (error) {
+      console.error('Get departments failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async createDepartment(name: string): Promise<{ success: boolean; department?: Department; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/departments`, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+    } catch (error) {
+      console.error('Create department failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async deleteDepartment(id: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/departments/${id}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      console.error('Delete department failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // Additional Info methods
+  async getAdditionalInfos(): Promise<{ success: boolean; additionalInfos?: AdditionalInfo[]; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/additional-infos`);
+    } catch (error) {
+      console.error('Get additional infos failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async createAdditionalInfo(name: string, departmentId: string): Promise<{ success: boolean; additionalInfo?: AdditionalInfo; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/additional-infos`, {
+        method: 'POST',
+        body: JSON.stringify({ name, department_id: departmentId }),
+      });
+    } catch (error) {
+      console.error('Create additional info failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async deleteAdditionalInfo(id: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/additional-infos/${id}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      console.error('Delete additional info failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // Column Settings methods
+  async saveColumnSettings(settings: ColumnSetting[]): Promise<{ success: boolean; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/column-settings`, {
+        method: 'POST',
+        body: JSON.stringify({ settings }),
+      });
+    } catch (error) {
+      console.error('Save column settings failed:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }

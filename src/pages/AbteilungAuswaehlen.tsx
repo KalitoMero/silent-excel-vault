@@ -1,14 +1,9 @@
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-interface AdditionalInfo {
-  id: string;
-  name: string;
-  departmentId: string;
-}
+import { apiService, AdditionalInfo, Department } from '@/services/api';
 
 const AbteilungAuswaehlen = () => {
   const [searchParams] = useSearchParams();
@@ -16,33 +11,40 @@ const AbteilungAuswaehlen = () => {
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
   const abteilung = searchParams.get('abteilung') || '';
   const [additionalInfos, setAdditionalInfos] = useState<AdditionalInfo[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load additional infos from localStorage and filter by department
-    const savedAdditionalInfos = localStorage.getItem('additionalInfos');
-    const savedDepartments = localStorage.getItem('departments');
-    
-    if (savedAdditionalInfos && savedDepartments) {
-      try {
-        const allAdditionalInfos = JSON.parse(savedAdditionalInfos);
-        const departments = JSON.parse(savedDepartments);
+    loadData();
+  }, [abteilung]);
+
+  const loadData = async () => {
+    try {
+      const [departmentsResult, additionalInfosResult] = await Promise.all([
+        apiService.getDepartments(),
+        apiService.getAdditionalInfos()
+      ]);
+
+      if (departmentsResult.success && departmentsResult.departments) {
+        setDepartments(departmentsResult.departments);
         
         // Find the department ID for the selected department
-        const selectedDepartment = departments.find((dept: any) => dept.name === abteilung);
+        const selectedDepartment = departmentsResult.departments.find(dept => dept.name === abteilung);
         
-        if (selectedDepartment) {
+        if (selectedDepartment && additionalInfosResult.success && additionalInfosResult.additionalInfos) {
           // Filter additional infos for this department
-          const filteredInfos = allAdditionalInfos.filter(
-            (info: AdditionalInfo) => info.departmentId === selectedDepartment.id
+          const filteredInfos = additionalInfosResult.additionalInfos.filter(
+            info => info.department_id === selectedDepartment.id
           );
           setAdditionalInfos(filteredInfos);
         }
-      } catch (error) {
-        console.error('Error loading additional infos:', error);
-        setAdditionalInfos([]);
       }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [abteilung]);
+  };
 
   const handleAdditionalInfoSelect = (additionalInfo: string) => {
     navigate(`/media-info-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=${encodeURIComponent(additionalInfo)}`);
@@ -93,7 +95,12 @@ const AbteilungAuswaehlen = () => {
               
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Verfügbare Erstteilinformationen für {abteilung}:</h3>
-                {additionalInfos.length > 0 ? (
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mr-2" />
+                    <span>Laden...</span>
+                  </div>
+                ) : additionalInfos.length > 0 ? (
                   <div className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {additionalInfos.map((info) => (
