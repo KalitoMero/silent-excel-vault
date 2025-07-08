@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { apiService, OrderEntry } from '@/services/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getMediaUrl } from '@/utils/url';
 
 export interface CompletedOrderEntry extends OrderEntry {
   abschlussZeitstempel: Date;
@@ -415,7 +416,7 @@ const Monitor = () => {
                                 size="sm"
                                 onClick={() => {
                                   if (media.file_type === 'video') {
-                                    openVideoPlayer(`http://localhost:3002${media.file_path}`, order.auftragsnummer);
+                                    openVideoPlayer(getMediaUrl(media.file_path), order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
@@ -503,7 +504,7 @@ const Monitor = () => {
                                 size="sm"
                                 onClick={() => {
                                   if (media.file_type === 'video') {
-                                    openVideoPlayer(`http://localhost:3002${media.file_path}`, order.auftragsnummer);
+                                    openVideoPlayer(getMediaUrl(media.file_path), order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
