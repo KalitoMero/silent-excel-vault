@@ -327,8 +327,12 @@ const Monitor = () => {
         return value;
       });
       
-      // Remove the order from active orders
-      const updatedOrders = orders.filter((o: OrderEntry) => o.auftragsnummer !== order.auftragsnummer);
+      // Remove the specific order by matching multiple criteria to ensure uniqueness
+      const updatedOrders = orders.filter((o: OrderEntry) => 
+        !(o.auftragsnummer === order.auftragsnummer && 
+          o.prioritaet === order.prioritaet && 
+          o.zeitstempel.getTime() === order.zeitstempel.getTime())
+      );
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       
       // Add to completed orders with "abgebrochen" status
