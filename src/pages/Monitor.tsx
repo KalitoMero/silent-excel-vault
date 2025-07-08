@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { apiService, OrderEntry } from '@/services/api';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export interface CompletedOrderEntry extends OrderEntry {
   abschlussZeitstempel: Date;
@@ -28,6 +29,9 @@ const Monitor = () => {
   const [barcodeValue, setBarcodeValue] = useState<string>('');
   const [, forceUpdate] = useState({});
   const [orderMedia, setOrderMedia] = useState<{[key: string]: any[]}>({});
+  const [videoPlayerOpen, setVideoPlayerOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>('');
+  const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const autoReturn = searchParams.get('autoReturn') === 'true';
@@ -375,6 +379,13 @@ const Monitor = () => {
     }
   };
 
+  // Function to open video player
+  const openVideoPlayer = (videoUrl: string, auftragsnummer: string) => {
+    setCurrentVideoUrl(videoUrl);
+    setCurrentVideoTitle(`Video für Auftrag ${auftragsnummer}`);
+    setVideoPlayerOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <Button 
@@ -449,7 +460,7 @@ const Monitor = () => {
                                 onClick={() => {
                                   if (media.file_type === 'video') {
                                     const { data } = supabase.storage.from('order-media').getPublicUrl(media.file_path);
-                                    window.open(data.publicUrl, '_blank');
+                                    openVideoPlayer(data.publicUrl, order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
@@ -538,7 +549,7 @@ const Monitor = () => {
                                 onClick={() => {
                                   if (media.file_type === 'video') {
                                     const { data } = supabase.storage.from('order-media').getPublicUrl(media.file_path);
-                                    window.open(data.publicUrl, '_blank');
+                                    openVideoPlayer(data.publicUrl, order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
@@ -606,6 +617,27 @@ const Monitor = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Video Player Dialog */}
+      <Dialog open={videoPlayerOpen} onOpenChange={setVideoPlayerOpen}>
+        <DialogContent className="max-w-4xl w-full h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{currentVideoTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 flex items-center justify-center">
+            {currentVideoUrl && (
+              <video
+                src={currentVideoUrl}
+                controls
+                className="max-w-full max-h-full rounded-lg"
+                autoPlay
+              >
+                Ihr Browser unterstützt das Video-Element nicht.
+              </video>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
