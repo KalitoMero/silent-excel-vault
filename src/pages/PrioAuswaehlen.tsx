@@ -34,6 +34,10 @@ const PrioAuswaehlen = () => {
     navigate(`/abteilung-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(departmentName)}`);
   };
 
+  const handleSkipDepartment = () => {
+    navigate(`/media-info-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=&zusatzinfo=`);
+  };
+
   const handlePrioSelect = (prio: number) => {
     if (!auftragsnummer) {
       toast("Fehler: Keine Auftragsnummer gefunden", {
@@ -86,17 +90,28 @@ const PrioAuswaehlen = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Verfügbare Abteilungen:</h3>
                 {departments.length > 0 ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {departments.map((department) => (
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {departments.map((department) => (
+                        <Button
+                          key={department.id}
+                          onClick={() => handleDepartmentSelect(department.name)}
+                          variant="outline"
+                          className="h-auto p-4 text-left justify-start"
+                        >
+                          {department.name}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t">
                       <Button
-                        key={department.id}
-                        onClick={() => handleDepartmentSelect(department.name)}
-                        variant="outline"
-                        className="h-auto p-4 text-left justify-start"
+                        onClick={handleSkipDepartment}
+                        variant="secondary"
+                        className="w-full h-auto p-4"
                       >
-                        {department.name}
+                        Ohne Info weiter
                       </Button>
-                    ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">

@@ -48,6 +48,10 @@ const AbteilungAuswaehlen = () => {
     navigate(`/media-info-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=${encodeURIComponent(additionalInfo)}`);
   };
 
+  const handleSkipAdditionalInfo = () => {
+    navigate(`/media-info-auswaehlen?auftragsnummer=${encodeURIComponent(auftragsnummer)}&abteilung=${encodeURIComponent(abteilung)}&zusatzinfo=`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <Button 
@@ -90,17 +94,28 @@ const AbteilungAuswaehlen = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Verfügbare Erstteilinformationen für {abteilung}:</h3>
                 {additionalInfos.length > 0 ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {additionalInfos.map((info) => (
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {additionalInfos.map((info) => (
+                        <Button
+                          key={info.id}
+                          onClick={() => handleAdditionalInfoSelect(info.name)}
+                          variant="outline"
+                          className="h-auto p-4 text-left justify-start"
+                        >
+                          {info.name}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t">
                       <Button
-                        key={info.id}
-                        onClick={() => handleAdditionalInfoSelect(info.name)}
-                        variant="outline"
-                        className="h-auto p-4 text-left justify-start"
+                        onClick={handleSkipAdditionalInfo}
+                        variant="secondary"
+                        className="w-full h-auto p-4"
                       >
-                        {info.name}
+                        Ohne Info weiter
                       </Button>
-                    ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
