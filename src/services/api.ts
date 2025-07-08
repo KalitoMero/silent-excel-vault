@@ -149,6 +149,41 @@ class ApiService {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
+
+  async saveMedia(mediaData: { 
+    auftragsnummer: string; 
+    file_path: string; 
+    file_type: string; 
+    content?: string; 
+  }): Promise<{ success: boolean; id?: string; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/media`, {
+        method: 'POST',
+        body: JSON.stringify(mediaData),
+      });
+    } catch (error) {
+      console.error('Save media failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async getMedia(): Promise<{ success: boolean; media?: any[]; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/media`);
+    } catch (error) {
+      console.error('Get media failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async getMediaByAuftragsnummer(auftragsnummer: string): Promise<{ success: boolean; media?: any[]; error?: string }> {
+    try {
+      return await this.fetchWithErrorHandling(`${API_BASE_URL}/media/${encodeURIComponent(auftragsnummer)}`);
+    } catch (error) {
+      console.error('Get media by auftragsnummer failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 export const apiService = new ApiService();

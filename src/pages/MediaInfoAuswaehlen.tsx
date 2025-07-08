@@ -6,6 +6,7 @@ import { ArrowLeft, Home, Mic, Type, Camera } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { apiService } from '@/services/api';
 
 const MediaInfoAuswaehlen = () => {
   const [searchParams] = useSearchParams();
@@ -50,8 +51,16 @@ const MediaInfoAuswaehlen = () => {
           
           fileUrl = urlData.publicUrl;
           
-          // Save media info to database
+          // Save media info to Supabase database
           await supabase.from('order_media').insert({
+            auftragsnummer,
+            file_path: fileName,
+            file_type: 'video',
+            content: mediaInfo || 'Video-Aufnahme'
+          });
+
+          // Also save to local PostgreSQL API
+          await apiService.saveMedia({
             auftragsnummer,
             file_path: fileName,
             file_type: 'video',
@@ -64,8 +73,16 @@ const MediaInfoAuswaehlen = () => {
       }
     } else if (mediaInfo && textNote) {
       try {
-        // Save text note to database
+        // Save text note to Supabase database
         await supabase.from('order_media').insert({
+          auftragsnummer,
+          file_path: '',
+          file_type: 'text',
+          content: textNote
+        });
+
+        // Also save to local PostgreSQL API
+        await apiService.saveMedia({
           auftragsnummer,
           file_path: '',
           file_type: 'text',
