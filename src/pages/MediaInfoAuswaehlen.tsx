@@ -492,7 +492,7 @@ const MediaInfoAuswaehlen = () => {
                     variant={isRecording ? "destructive" : "default"}
                   >
                     <Camera className="mr-3 h-6 w-6" />
-                    {isRecording ? "Aufnahme beenden" : "Video-Aufnahme starten"}
+                    {isRecording ? "Aufnahme beenden" : "Aufnahme starten"}
                   </Button>
                   
                   <Button 
