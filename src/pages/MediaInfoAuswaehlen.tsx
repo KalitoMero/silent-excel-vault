@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Home, Mic, Type, Camera } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useState, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { apiService } from '@/services/api';
 
 const MediaInfoAuswaehlen = () => {
@@ -25,63 +24,28 @@ const MediaInfoAuswaehlen = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const navigateToPrioSelection = async (mediaInfo?: string, mediaFile?: Blob) => {
-    let fileUrl = '';
-    
     if (mediaFile) {
       try {
         // Generate unique filename
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName = `${auftragsnummer}_${timestamp}.webm`;
         
-        // Upload to Supabase storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('order-media')
-          .upload(fileName, mediaFile, {
-            contentType: 'video/webm'
-          });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          toast("Fehler beim Speichern der Aufnahme", { duration: 3000 });
-        } else {
-          // Get public URL
-          const { data: urlData } = supabase.storage
-            .from('order-media')
-            .getPublicUrl(fileName);
-          
-          fileUrl = urlData.publicUrl;
-          
-          // Save media info to Supabase database
-          await supabase.from('order_media').insert({
-            auftragsnummer,
-            file_path: fileName,
-            file_type: 'video',
-            content: mediaInfo || 'Video-Aufnahme'
-          });
-
-          // Also save to local PostgreSQL API
-          await apiService.saveMedia({
-            auftragsnummer,
-            file_path: fileName,
-            file_type: 'video',
-            content: mediaInfo || 'Video-Aufnahme'
-          });
-        }
+        // Save to PostgreSQL API
+        await apiService.saveMedia({
+          auftragsnummer,
+          file_path: fileName,
+          file_type: 'video',
+          content: mediaInfo || 'Video-Aufnahme'
+        });
+        
+        toast("Aufnahme gespeichert", { duration: 2000 });
       } catch (error) {
         console.error('Error saving media:', error);
         toast("Fehler beim Speichern", { duration: 3000 });
       }
     } else if (mediaInfo && textNote) {
       try {
-        // Save text note to Supabase database
-        await supabase.from('order_media').insert({
-          auftragsnummer,
-          file_path: '',
-          file_type: 'text',
-          content: textNote
-        });
-
-        // Also save to local PostgreSQL API
+        // Save text note to PostgreSQL API
         await apiService.saveMedia({
           auftragsnummer,
           file_path: '',
