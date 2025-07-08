@@ -30,13 +30,22 @@ const MediaInfoAuswaehlen = () => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const fileName = `${auftragsnummer}_${timestamp}.webm`;
         
-        // Save to PostgreSQL API
-        await apiService.saveMedia({
-          auftragsnummer,
-          file_path: fileName,
-          file_type: 'video',
-          content: mediaInfo || 'Video-Aufnahme'
+        // Create FormData to upload the actual video file
+        const formData = new FormData();
+        formData.append('file', mediaFile, fileName);
+        formData.append('auftragsnummer', auftragsnummer);
+        formData.append('file_type', 'video');
+        formData.append('content', mediaInfo || 'Video-Aufnahme');
+        
+        // Upload video file to backend
+        const response = await fetch('/api/media', {
+          method: 'POST',
+          body: formData
         });
+        
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
         
         toast("Aufnahme gespeichert", { duration: 2000 });
       } catch (error) {
