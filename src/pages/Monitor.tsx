@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { apiService, OrderEntry } from '@/services/api';
-import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export interface CompletedOrderEntry extends OrderEntry {
@@ -67,17 +66,15 @@ const Monitor = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Load orders from localStorage
-  const loadOrders = () => {
+  // Load orders from PostgreSQL
+  const loadOrders = async () => {
     try {
-      const ordersStr = localStorage.getItem('orders');
-      if (ordersStr) {
-        const orders = JSON.parse(ordersStr, (key, value) => {
-          if (key === 'zeitstempel') {
-            return new Date(value);
-          }
-          return value;
-        });
+      const response = await apiService.getOrders();
+      if (response.success && response.orders) {
+        const orders = response.orders.map(order => ({
+          ...order,
+          zeitstempel: new Date(order.zeitstempel)
+        }));
         
         // Split orders by priority
         const prio1 = orders.filter((order: OrderEntry) => order.prioritaet === 1);
@@ -120,29 +117,22 @@ const Monitor = () => {
     }
   };
 
-  // Load order media from Supabase
+  // Load order media from PostgreSQL
   const loadOrderMedia = async () => {
     try {
-      const { data, error } = await supabase
-        .from('order_media')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await apiService.getMedia();
+      if (response.success && response.media) {
+        // Group media by order number
+        const mediaByOrder: {[key: string]: any[]} = {};
+        response.media.forEach(media => {
+          if (!mediaByOrder[media.auftragsnummer]) {
+            mediaByOrder[media.auftragsnummer] = [];
+          }
+          mediaByOrder[media.auftragsnummer].push(media);
+        });
 
-      if (error) {
-        console.error('Error loading order media:', error);
-        return;
+        setOrderMedia(mediaByOrder);
       }
-
-      // Group media by order number
-      const mediaByOrder: {[key: string]: any[]} = {};
-      data?.forEach(media => {
-        if (!mediaByOrder[media.auftragsnummer]) {
-          mediaByOrder[media.auftragsnummer] = [];
-        }
-        mediaByOrder[media.auftragsnummer].push(media);
-      });
-
-      setOrderMedia(mediaByOrder);
     } catch (error) {
       console.error('Error loading order media:', error);
     }
@@ -264,51 +254,17 @@ const Monitor = () => {
   };
 
   // Function to mark an order as completed
-  const completeOrder = (order: OrderEntry) => {
+  const completeOrder = async (order: OrderEntry) => {
     try {
-      // Get current orders from localStorage
-      const ordersStr = localStorage.getItem('orders');
-      if (!ordersStr) return;
-      
-      const orders = JSON.parse(ordersStr, (key, value) => {
-        if (key === 'zeitstempel') {
-          return new Date(value);
-        }
-        return value;
-      });
-      
-      // Remove the completed order from active orders
-      const updatedOrders = orders.filter((o: OrderEntry) => o.auftragsnummer !== order.auftragsnummer);
-      localStorage.setItem('orders', JSON.stringify(updatedOrders));
-      
-      // Add to completed orders with completion timestamp
-      const completedOrder: CompletedOrderEntry = {
-        ...order,
-        abschlussZeitstempel: new Date(),
-        aufenthaltsZeitInQS: calculateTimeInQS(order.zeitstempel)
-      };
-      
-      const completedOrdersStr = localStorage.getItem('completedOrders');
-      let completedOrders = [];
-      
-      if (completedOrdersStr) {
-        try {
-          completedOrders = JSON.parse(completedOrdersStr, (key, value) => {
-            if (key === 'zeitstempel' || key === 'abschlussZeitstempel') {
-              return new Date(value);
-            }
-            return value;
-          });
-        } catch (error) {
-          console.error('Error parsing completed orders:', error);
-        }
+      // Mark order as complete in PostgreSQL
+      const response = await apiService.completeOrder(order.auftragsnummer);
+      if (response.success) {
+        // Reload orders after completion
+        await loadOrders();
+        toast(`Auftrag ${order.auftragsnummer} wurde abgeschlossen`, { duration: 3000 });
+      } else {
+        toast(`Fehler beim Abschließen: ${response.error}`, { duration: 3000 });
       }
-      
-      completedOrders.push(completedOrder);
-      localStorage.setItem('completedOrders', JSON.stringify(completedOrders));
-      
-      // Reload orders after completion
-      loadOrders();
     } catch (error) {
       console.error('Error completing order:', error);
       toast("Fehler beim Abschließen des Auftrags", {
@@ -459,8 +415,7 @@ const Monitor = () => {
                                 size="sm"
                                 onClick={() => {
                                   if (media.file_type === 'video') {
-                                    const { data } = supabase.storage.from('order-media').getPublicUrl(media.file_path);
-                                    openVideoPlayer(data.publicUrl, order.auftragsnummer);
+                                    openVideoPlayer(media.file_path, order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
@@ -548,8 +503,7 @@ const Monitor = () => {
                                 size="sm"
                                 onClick={() => {
                                   if (media.file_type === 'video') {
-                                    const { data } = supabase.storage.from('order-media').getPublicUrl(media.file_path);
-                                    openVideoPlayer(data.publicUrl, order.auftragsnummer);
+                                    openVideoPlayer(media.file_path, order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
