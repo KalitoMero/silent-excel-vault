@@ -19,7 +19,7 @@ const departmentsRoutes = require('./routes/departments');
 const additionalInfosRoutes = require('./routes/additionalInfos');
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3005;
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -58,6 +58,16 @@ app.use(limiter);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Cross-Origin Resource Policy middleware for media files
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
+  next();
+});
 
 // Static files for media
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
