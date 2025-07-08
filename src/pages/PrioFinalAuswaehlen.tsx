@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,18 +9,23 @@ import { OrderEntry } from '@/services/api';
 const PrioFinalAuswaehlen = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
   const auftragsnummer = searchParams.get('auftragsnummer') || '';
   const abteilung = searchParams.get('abteilung') || '';
   const zusatzinfo = searchParams.get('zusatzinfo') || '';
   const mediaInfo = searchParams.get('mediaInfo') || '';
 
   const handlePrioSelect = async (prio: number) => {
+    if (isProcessing) return; // Prevent multiple clicks
+    
     if (!auftragsnummer) {
       toast("Fehler: Keine Auftragsnummer gefunden", {
         duration: 2000,
       });
       return;
     }
+
+    setIsProcessing(true);
 
     try {
       // Create new order entry
@@ -97,15 +103,14 @@ const PrioFinalAuswaehlen = () => {
       
       console.log(`Auftragsnummer ${auftragsnummer} mit Priorität ${prio}, Abteilung ${abteilung} und Erstteilinformation ${zusatzinfo} erfolgreich gespeichert`);
       
-      // Show success confirmation toast
+      // Navigate to monitor page immediately after saving
       toast(`Auftrag erfolgreich in Prio ${prio} übernommen.`, {
-        duration: 2000,
+        duration: 1500,
       });
       
-      // Navigate to monitor page after 2 seconds
       setTimeout(() => {
         navigate('/monitor?autoReturn=true');
-      }, 2000);
+      }, 500); // Reduced from 2000ms to 500ms for faster navigation
       
     } catch (error) {
       console.error('Error saving order:', error);
@@ -159,18 +164,20 @@ const PrioFinalAuswaehlen = () => {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button 
                   onClick={() => handlePrioSelect(1)}
+                  disabled={isProcessing}
                   size="lg" 
-                  className="bg-amber-500 hover:bg-amber-600 px-10 py-6 text-xl h-auto"
+                  className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 px-10 py-6 text-xl h-auto"
                 >
-                  Prio 1
+                  {isProcessing ? "Verarbeitung..." : "Prio 1"}
                 </Button>
                 <Button 
                   onClick={() => handlePrioSelect(2)}
+                  disabled={isProcessing}
                   variant="outline"
                   size="lg" 
-                  className="border-slate-400 hover:bg-slate-100 px-10 py-6 text-xl h-auto"
+                  className="border-slate-400 hover:bg-slate-100 disabled:opacity-50 px-10 py-6 text-xl h-auto"
                 >
-                  Prio 2
+                  {isProcessing ? "Verarbeitung..." : "Prio 2"}
                 </Button>
               </div>
             </div>
