@@ -68,7 +68,7 @@ class ApiService {
         
         // Check if we're getting HTML instead of an API response
         if (errorText.includes('<!DOCTYPE html>')) {
-          throw new Error(`Backend server not available. Please ensure your PostgreSQL API server is running on 172.16.5.153:3002. Status: ${response.status}`);
+          throw new Error(`Backend server not available. Please ensure your PostgreSQL API server is running on localhost:3002. Status: ${response.status}`);
         }
         
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -81,7 +81,7 @@ class ApiService {
         
         // Check if we're getting HTML instead of an API response
         if (responseText.includes('<!DOCTYPE html>')) {
-          throw new Error('Backend server not available. Please ensure your PostgreSQL API server is running on 172.16.5.153:3002.');
+          throw new Error('Backend server not available. Please ensure your PostgreSQL API server is running on localhost:3002.');
         }
         
         throw new Error('Server returned non-JSON response');
