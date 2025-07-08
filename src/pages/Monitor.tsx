@@ -415,7 +415,7 @@ const Monitor = () => {
                                 size="sm"
                                 onClick={() => {
                                   if (media.file_type === 'video') {
-                                    openVideoPlayer(media.file_path, order.auftragsnummer);
+                                    openVideoPlayer(`http://localhost:3002${media.file_path}`, order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
@@ -503,7 +503,7 @@ const Monitor = () => {
                                 size="sm"
                                 onClick={() => {
                                   if (media.file_type === 'video') {
-                                    openVideoPlayer(media.file_path, order.auftragsnummer);
+                                    openVideoPlayer(`http://localhost:3002${media.file_path}`, order.auftragsnummer);
                                   } else if (media.file_type === 'text') {
                                     toast(media.content, { duration: 5000 });
                                   }
