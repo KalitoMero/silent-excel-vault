@@ -19,26 +19,44 @@ const Scanauftrag = () => {
     }
   }, []);
 
-  // Keep focus on input field at all times
+  // Smart focus management - event-based instead of aggressive intervals
   useEffect(() => {
+    const isInteractiveElement = (element: Element | null): boolean => {
+      if (!element) return false;
+      const tagName = element.tagName.toLowerCase();
+      return ['button', 'a', 'select', 'textarea'].includes(tagName) || 
+             element.getAttribute('role') === 'button' ||
+             element.getAttribute('tabindex') !== null;
+    };
+
+    const handleFocusLoss = () => {
+      // Only refocus if user is not interacting with other elements
+      setTimeout(() => {
+        if (inputRef.current && 
+            !isInteractiveElement(document.activeElement) &&
+            document.activeElement !== inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 50);
+    };
+
     const handleWindowFocus = () => {
       if (inputRef.current) {
         inputRef.current.focus();
       }
     };
 
+    // Event-based focus management
+    document.addEventListener('blur', handleFocusLoss, true);
+    document.addEventListener('focusout', handleFocusLoss);
+    document.addEventListener('click', handleFocusLoss);
     window.addEventListener('focus', handleWindowFocus);
-    
-    // Also refocus periodically to ensure it stays focused
-    const focusInterval = setInterval(() => {
-      if (inputRef.current && document.activeElement !== inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 100);
 
     return () => {
+      document.removeEventListener('blur', handleFocusLoss, true);
+      document.removeEventListener('focusout', handleFocusLoss);
+      document.removeEventListener('click', handleFocusLoss);
       window.removeEventListener('focus', handleWindowFocus);
-      clearInterval(focusInterval);
     };
   }, []);
 
@@ -99,6 +117,14 @@ const Scanauftrag = () => {
                   spellCheck={false}
                   data-form-type="other"
                   inputMode="text"
+                  role="textbox"
+                  form="non-existent-form"
+                  style={{
+                    WebkitAppearance: 'none',
+                    WebkitUserSelect: 'text'
+                  }}
+                  data-webkit-speech=""
+                  data-ms-editor="false"
                 />
               </div>
             </div>
