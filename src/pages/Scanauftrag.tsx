@@ -12,11 +12,34 @@ const Scanauftrag = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  // Auto-focus the input field when the page loads
+  // Auto-focus the input field when the page loads and maintain focus
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
+  }, []);
+
+  // Keep focus on input field at all times
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    
+    // Also refocus periodically to ensure it stays focused
+    const focusInterval = setInterval(() => {
+      if (inputRef.current && document.activeElement !== inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+      clearInterval(focusInterval);
+    };
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,10 +56,6 @@ const Scanauftrag = () => {
     if (e.key === 'Enter') {
       handleSubmit();
     }
-  };
-
-  const handleBlur = () => {
-    handleSubmit();
   };
 
   return (
@@ -71,10 +90,15 @@ const Scanauftrag = () => {
                   value={auftragsnummer}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
-                  onBlur={handleBlur}
                   className="text-lg py-6"
                   placeholder="Scannen oder eingeben..."
                   autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-form-type="other"
+                  inputMode="text"
                 />
               </div>
             </div>
